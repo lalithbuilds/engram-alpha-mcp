@@ -1,6 +1,12 @@
-# Engram Alpha 2.0 (MCP)
+<div align="center">
+  <h1>🧠 Engram Alpha 2.0 (MCP)</h1>
+  <p><strong>Zero-dependency, semantic Knowledge Graph built for the Model Context Protocol (MCP).</strong></p>
+  <img src="assets/demo.gif" alt="Engram Alpha Demo" width="100%">
+  <br><br>
+  <img src="https://img.shields.io/badge/License-MIT-yellow.svg" alt="License: MIT">
+  <img src="https://img.shields.io/badge/python-3.10+-blue.svg" alt="Python 3.10+">
+</div>
 
-Zero-dependency, semantic Knowledge Graph built for the Model Context Protocol (MCP).
 
 ## Architecture
 - **Thin Base + Fat Extras:** `pip install engram` provides the ultra-light core. `pip install engram[local]` adds local `sqlite-vec` semantic indexing.
