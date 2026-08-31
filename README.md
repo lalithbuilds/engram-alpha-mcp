@@ -1,8 +1,11 @@
 <div align="center">
   <h1>🧠 Engram Alpha 2.0 (MCP)</h1>
   <p><strong>Zero-dependency, semantic Knowledge Graph built for the Model Context Protocol (MCP).</strong></p>
-  <img src="assets/demo.gif" alt="Engram Alpha Demo" width="100%">
-  <br><br>
+</div>
+
+![Engram Demo](./assets/demo.gif)
+
+<div align="center">
   <img src="https://img.shields.io/badge/License-MIT-yellow.svg" alt="License: MIT">
   <img src="https://img.shields.io/badge/python-3.10+-blue.svg" alt="Python 3.10+">
 </div>
