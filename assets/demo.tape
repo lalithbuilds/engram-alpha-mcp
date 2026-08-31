@@ -1,14 +1,15 @@
 Output assets/demo.gif
-Set FontSize 16
-Set Width 1000
+Set FontSize 15
+Set Width 900
 Set Height 450
 Set Padding 40
 Set WindowBar Colorful
 Set Margin 20
-Set MarginFill "#6B50FF"
-Set BorderRadius 10
-Set FontFamily "JetBrains Mono"
-Set Theme "Catppuccin Mocha"
+Set MarginFill "#1a1b26" 
+Set BorderRadius 12
+Set FontFamily "Fira Code"
+Set Theme "TokyoNight"
+Set TypingSpeed 40ms
 
 Hide
 Type "python3 -c 'import engram'" Enter
@@ -18,9 +19,23 @@ Type "export ENGRAM_DB_PATH=engram.sqlite" Enter
 Type "clear" Enter
 Show
 
-Type "engram setup" Enter
+Sleep 500ms
+Type "engram save 'Core system architecture initialized. WAL mode active.' --importance 10"
+Sleep 200ms
+Enter
+Sleep 1s
+
+Type "engram save 'API keys loaded into encrypted environment.' --category sec"
+Sleep 200ms
+Enter
+Sleep 1s
+
+Type "engram search 'architecture'"
+Sleep 200ms
+Enter
 Sleep 2s
-Type "engram save 'Deployed Engram Alpha 2.0 with semantic sqlite-vec indexing'" Enter
-Sleep 2s
-Type "engram search 'semantic indexing'" Enter
-Sleep 4s
+
+Type "engram stats"
+Sleep 200ms
+Enter
+Sleep 3s

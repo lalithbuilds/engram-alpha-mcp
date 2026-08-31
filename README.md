@@ -1,18 +1,17 @@
 <div align="center">
-  <img src="https://capsule-render.vercel.app/api?type=waving&color=6B50FF&height=200&section=header&text=Engram%20Alpha%202.0&fontSize=70&fontAlignY=35&animation=twinkling&fontColor=ffffff" width="100%"/>
+  <img src="https://capsule-render.vercel.app/api?type=cylinder&color=gradient&customColorList=10,13&height=180&section=header&text=Engram%20Alpha&fontSize=70&fontAlignY=45&animation=scaleIn&fontColor=ffffff&desc=V2%20Architecture&descAlignY=65&descAlign=62" width="100%"/>
   
   <br>
   
   <a href="https://git.io/typing-svg">
-    <img src="https://readme-typing-svg.demolab.com?font=JetBrains+Mono&weight=600&size=22&duration=3000&pause=1000&color=6B50FF&center=true&vCenter=true&width=800&lines=Zero-Dependency+Semantic+Knowledge+Graph;Built+for+the+Model+Context+Protocol+(MCP);Self-Healing+SQLite+Architecture;ACT-R+Power+Law+Memory+Decay" alt="Typing SVG" />
+    <img src="https://readme-typing-svg.demolab.com?font=Fira+Code&weight=600&size=24&duration=3000&pause=1000&color=00f2fe&center=true&vCenter=true&width=800&lines=Zero-Dependency+Semantic+Knowledge+Graph;Built+for+the+Model+Context+Protocol;Self-Healing+SQLite+Architecture;ACT-R+Power+Law+Memory+Decay" alt="Typing SVG" />
   </a>
   
   <br>
   
-  <img src="https://img.shields.io/badge/License-MIT-yellow.svg?style=for-the-badge" alt="License: MIT">
-  <img src="https://img.shields.io/badge/python-3.10+-blue.svg?style=for-the-badge&logo=python&logoColor=white" alt="Python 3.10+">
-  <img src="https://img.shields.io/badge/SQLite-07405E?style=for-the-badge&logo=sqlite&logoColor=white" alt="SQLite">
-  <img src="https://img.shields.io/badge/AI-Agents-FF5722?style=for-the-badge&logo=openai&logoColor=white" alt="Agents">
+  <img src="https://img.shields.io/badge/License-MIT-1a1b26.svg?style=for-the-badge&color=00f2fe" alt="License: MIT">
+  <img src="https://img.shields.io/badge/python-3.10+-1a1b26.svg?style=for-the-badge&logo=python&logoColor=00f2fe&color=00f2fe" alt="Python 3.10+">
+  <img src="https://img.shields.io/badge/SQLite-1a1b26?style=for-the-badge&logo=sqlite&logoColor=00f2fe&color=00f2fe" alt="SQLite">
 </div>
 
 <br>
