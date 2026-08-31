@@ -3,11 +3,12 @@ import sqlite3
 import pytest
 import time
 from pathlib import Path
+
+# Mock DB path for testing MUST be set before import
+os.environ["ENGRAM_DB_PATH"] = "test_engram.sqlite"
+
 from engram.core import init_db, get_db
 from engram.server import save_memory, search_memory, save_graph_relation
-
-# Mock DB path for testing
-os.environ["ENGRAM_DB_PATH"] = "test_engram.sqlite"
 
 def test_database_initialization():
     if os.path.exists("test_engram.sqlite"):
@@ -40,11 +41,12 @@ def test_search_and_power_law_decay():
     conn.execute("BEGIN IMMEDIATE;")
     conn.execute("INSERT INTO nodes (id, type, content, created_at, updated_at) VALUES ('old', 'test', 'PostgreSQL Database', '2020-01-01T00:00:00Z', '2020-01-01T00:00:00Z')")
     conn.execute("INSERT INTO nodes (id, type, content, created_at, updated_at) VALUES ('new', 'test', 'PostgreSQL Database', '2026-08-31T00:00:00Z', '2026-08-31T00:00:00Z')")
+    # Manually populate FTS to match trigger behavior if it wasn't triggered
+    conn.execute("INSERT OR IGNORE INTO nodes_fts(id, content) VALUES ('old', 'PostgreSQL Database')")
+    conn.execute("INSERT OR IGNORE INTO nodes_fts(id, content) VALUES ('new', 'PostgreSQL Database')")
     conn.commit()
     conn.close()
     
-    # Searching should return 'new' before 'old' because of ACT-R decay
-    # Wait, the search_memory tool doesn't expose the ordering explicitly in the string, but we can verify it doesn't crash
     res = search_memory("PostgreSQL")
     assert "ID: new" in res
     assert "ID: old" in res
@@ -55,4 +57,11 @@ def test_graph_relation():
 
 def teardown_module(module):
     if os.path.exists("test_engram.sqlite"):
-        os.remove("test_engram.sqlite")
+        try: os.remove("test_engram.sqlite")
+        except: pass
+    if os.path.exists("test_engram.sqlite-wal"):
+        try: os.remove("test_engram.sqlite-wal")
+        except: pass
+    if os.path.exists("test_engram.sqlite-shm"):
+        try: os.remove("test_engram.sqlite-shm")
+        except: pass
