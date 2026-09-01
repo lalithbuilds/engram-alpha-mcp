@@ -1,7 +1,7 @@
 """
-Engram Core Database Engine (Universal Cross-Platform Architecture)
+Engram Core Database Engine (Universal Production-Grade Architecture)
 Manages SQLite WAL semantic graph, schema migrations, ACT-R power-law decay,
-and cross-platform hardware storage liveness short-circuiting (macOS, Linux, Windows).
+multi-tenant project/agent namespaces, and cross-platform hardware storage liveness.
 """
 
 import sys
@@ -78,10 +78,12 @@ def init_db():
         target_path.parent.mkdir(mode=0o700, parents=True, exist_ok=True)
         conn = sqlite3.connect(str(target_path), timeout=30.0)
         
-        # Cross-Platform Connection Optimization
+        # Production Pragmas for SQLite WAL
         conn.execute("PRAGMA journal_mode = WAL;")
         conn.execute("PRAGMA synchronous = NORMAL;")
         conn.execute("PRAGMA busy_timeout = 30000;")
+        conn.execute("PRAGMA cache_size = -64000;")  # 64MB cache
+        conn.execute("PRAGMA mmap_size = 268435456;") # 256MB memory map
         
         # Register Math Functions for ACT-R Power-Law Decay
         def safe_power(base, exp):
@@ -92,7 +94,7 @@ def init_db():
                 
         conn.create_function("POWER", 2, safe_power)
 
-        # Semantic Graph & Knowledge Schema
+        # Semantic Graph & Knowledge Schema with Multi-Project Namespaces
         conn.execute("BEGIN IMMEDIATE;")
         try:
             conn.execute("""
@@ -106,7 +108,9 @@ def init_db():
                 last_accessed_at TEXT NOT NULL DEFAULT '',
                 embedding BLOB,
                 importance INTEGER NOT NULL DEFAULT 5,
-                category TEXT NOT NULL DEFAULT 'general'
+                category TEXT NOT NULL DEFAULT 'general',
+                project TEXT NOT NULL DEFAULT 'default',
+                agent TEXT NOT NULL DEFAULT 'system'
             );
             """)
             
@@ -119,6 +123,10 @@ def init_db():
                 conn.execute("ALTER TABLE nodes ADD COLUMN importance INTEGER NOT NULL DEFAULT 5;")
             if "category" not in columns:
                 conn.execute("ALTER TABLE nodes ADD COLUMN category TEXT NOT NULL DEFAULT 'general';")
+            if "project" not in columns:
+                conn.execute("ALTER TABLE nodes ADD COLUMN project TEXT NOT NULL DEFAULT 'default';")
+            if "agent" not in columns:
+                conn.execute("ALTER TABLE nodes ADD COLUMN agent TEXT NOT NULL DEFAULT 'system';")
 
             conn.execute("""
             CREATE TABLE IF NOT EXISTS edges (
@@ -127,9 +135,25 @@ def init_db():
                 relation TEXT,
                 weight REAL DEFAULT 1.0,
                 created_at TEXT DEFAULT '',
-                PRIMARY KEY (source, target, relation)
+                project TEXT NOT NULL DEFAULT 'default',
+                PRIMARY KEY (source, target, relation, project)
             );
             """)
+
+            cur = conn.execute("PRAGMA table_info(edges);")
+            edge_cols = [row[1] for row in cur.fetchall()]
+            if "weight" not in edge_cols:
+                conn.execute("ALTER TABLE edges ADD COLUMN weight REAL DEFAULT 1.0;")
+            if "created_at" not in edge_cols:
+                conn.execute("ALTER TABLE edges ADD COLUMN created_at TEXT DEFAULT '';")
+            if "project" not in edge_cols:
+                conn.execute("ALTER TABLE edges ADD COLUMN project TEXT NOT NULL DEFAULT 'default';")
+
+            # Indexes for production query acceleration
+            conn.execute("CREATE INDEX IF NOT EXISTS idx_nodes_project ON nodes (project, category);")
+            conn.execute("CREATE INDEX IF NOT EXISTS idx_edges_lookup ON edges (source, target, project);")
+
+            # FTS5 Trigram Full-Text Index & Triggers
             conn.execute("""
             CREATE VIRTUAL TABLE IF NOT EXISTS nodes_fts USING fts5(id, content, tokenize='trigram');
             """)
@@ -158,6 +182,15 @@ def init_db():
             os.umask(old_umask)
         
     return conn
+
+def optimize_and_checkpoint(conn) -> Dict[str, Any]:
+    """Execute WAL checkpoint, vacuum, and index optimization."""
+    try:
+        wal_res = conn.execute("PRAGMA wal_checkpoint(TRUNCATE);").fetchall()
+        conn.execute("PRAGMA optimize;")
+        return {"status": "optimized", "checkpoint": wal_res}
+    except Exception as e:
+        return {"status": "error", "message": str(e)}
 
 def get_db():
     conn = init_db()

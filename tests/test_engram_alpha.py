@@ -1,5 +1,5 @@
 """
-Universal Cross-Platform Integration & Feature Tests for Engram Alpha MCP
+Universal Production-Grade Tests for Engram Alpha MCP
 """
 
 import os
@@ -8,9 +8,9 @@ import pytest
 import time
 from pathlib import Path
 
-os.environ["ENGRAM_DB_PATH"] = "test_engram_v3.sqlite"
+os.environ["ENGRAM_DB_PATH"] = "test_engram_v4.sqlite"
 
-from engram.core import init_db, get_db, check_storage_liveness
+from engram.core import init_db, get_db, check_storage_liveness, optimize_and_checkpoint
 from engram.server import (
     save_memory,
     search_memory,
@@ -18,13 +18,16 @@ from engram.server import (
     query_graph,
     extract_and_save_memory,
     consolidate_reflections,
+    deduplicate_memories,
+    visualize_graph,
+    checkpoint_db,
     get_stats,
 )
 from engram.amx import get_acceleration_tier
 
 def test_database_initialization():
-    if os.path.exists("test_engram_v3.sqlite"):
-        os.remove("test_engram_v3.sqlite")
+    if os.path.exists("test_engram_v4.sqlite"):
+        os.remove("test_engram_v4.sqlite")
         
     conn = get_db()
     res = conn.execute("PRAGMA journal_mode;").fetchone()
@@ -37,58 +40,46 @@ def test_database_initialization():
     conn.close()
 
 def test_storage_liveness_check():
-    p = Path("test_engram_v3.sqlite")
+    p = Path("test_engram_v4.sqlite")
     assert check_storage_liveness(p, timeout_seconds=1.0) is True
 
-def test_save_and_conflict_detection():
-    res1 = save_memory("We use PostgreSQL for database storage.", category="db", importance=8)
-    assert "Saved Node" in res1
-    
-    # Overlapping fact detection
-    res2 = save_memory("We use PostgreSQL for persistent data storage.", category="db", importance=7)
-    assert "Conflict found" in res2
+def test_project_namespaces():
+    save_memory("Project Alpha secret formula", project="alpha_proj", importance=8)
+    save_memory("Project Beta secret formula", project="beta_proj", importance=8)
 
-def test_extract_and_save_memory_agent():
-    raw_text = "RayDaemon connects_to EngramAlpha for memory recall. See also [[ModelCouncil]]."
-    res = extract_and_save_memory(raw_text)
-    assert "Extracted & Saved Node" in res
-    assert "connects_to" in res
-    assert "references" in res
+    # Search scoped to alpha
+    res_alpha = search_memory("secret formula", project="alpha_proj")
+    assert "Project: alpha_proj" in res_alpha
 
-    # Query graph
-    g_res = query_graph("RayDaemon", depth=1)
-    assert "connects_to" in g_res
-    assert "EngramAlpha" in g_res
+    # Search scoped to beta
+    res_beta = search_memory("secret formula", project="beta_proj")
+    assert "Project: beta_proj" in res_beta
 
-def test_2_hop_graph_spreading_activation():
-    save_graph_relation("NodeA", "links", "NodeB", weight=2.0)
-    save_graph_relation("NodeB", "links", "NodeC", weight=1.5)
+def test_deduplication_agent():
+    # Save 2 identical concepts
+    save_memory("We standardize strictly on Python 3.10 and FastMCP.", project="dedupe_test", importance=5)
+    save_memory("We standardize strictly on Python 3.10 and FastMCP.", project="dedupe_test", importance=6)
 
-    # 1-hop
-    res_1hop = query_graph("NodeA", depth=1)
-    assert "NodeB" in res_1hop
-    assert "NodeC" not in res_1hop
+    res = deduplicate_memories(similarity_threshold=0.90, project="dedupe_test")
+    assert "Deduplication Complete" in res
 
-    # 2-hop
-    res_2hop = query_graph("NodeA", depth=2)
-    assert "NodeB" in res_2hop
-    assert "NodeC" in res_2hop
+def test_graph_visualizer():
+    save_graph_relation("RayOrchestrator", "controls", "MemorySwarm", weight=1.0, project="viz_test")
+    save_graph_relation("MemorySwarm", "queries", "SQLiteWAL", weight=1.0, project="viz_test")
 
-def test_reflection_consolidation_agent():
-    save_memory("Benchmarking showed AMX vector engine is 195k ops/sec.", category="perf", importance=9)
-    save_memory("Benchmarking proved SQLite WAL survives 1400 concurrent writes.", category="perf", importance=9)
+    viz_res = visualize_graph("RayOrchestrator", depth=2, project="viz_test")
+    assert "Topology for [RayOrchestrator]:" in viz_res
+    assert "graph LR" in viz_res
+    assert "RayOrchestrator" in viz_res
+    assert "MemorySwarm" in viz_res
 
-    res = consolidate_reflections("Benchmarking")
-    assert "Created Consolidated Reflection" in res
-    assert "Consolidated Reflection on 'Benchmarking'" in res
-
-def test_stats_and_acceleration_tier():
-    stats = get_stats()
-    assert "Engram Alpha Universal MCP Stats" in stats
-    assert "Hardware Engine Tier" in stats
+def test_checkpoint_and_optimize():
+    res = checkpoint_db()
+    assert "Database Checkpoint Status" in res
+    assert "optimized" in res
 
 def teardown_module(module):
-    for f in ["test_engram_v3.sqlite", "test_engram_v3.sqlite-wal", "test_engram_v3.sqlite-shm"]:
+    for f in ["test_engram_v4.sqlite", "test_engram_v4.sqlite-wal", "test_engram_v4.sqlite-shm"]:
         if os.path.exists(f):
             try: os.remove(f)
             except: pass

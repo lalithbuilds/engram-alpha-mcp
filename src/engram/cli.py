@@ -1,7 +1,8 @@
 """
-Engram Alpha CLI (Universal Cross-Platform Architecture)
+Engram Alpha CLI (Universal Production-Grade Architecture)
 Full command-line interface for Engram Alpha MCP, Obsidian Ingestion,
-Graph Traversal, Autonomous Memory Extraction, and Hardware Benchmarking.
+Live Vault Watcher, Graph Traversal & Topology Visualizer, Semantic Deduplication,
+and Hardware Benchmarking.
 """
 
 import argparse
@@ -20,8 +21,12 @@ from .server import (
     ingest_obsidian,
     extract_and_save_memory,
     consolidate_reflections,
+    deduplicate_memories,
+    visualize_graph,
+    checkpoint_db,
     get_stats,
 )
+from .ingest import watch_obsidian_vault
 from .amx import (
     is_amx_hardware_available,
     amx_batch_cosine_similarity,
@@ -35,7 +40,6 @@ def setup_claude_desktop():
     elif sys.platform == "darwin":
         config_path = Path.home() / "Library" / "Application Support" / "Claude" / "claude_desktop_config.json"
     else:
-        # Linux
         config_path = Path.home() / ".config" / "Claude" / "claude_desktop_config.json"
 
     def updater(data):
@@ -80,7 +84,7 @@ def run_hardware_benchmark(num_vectors: int = 10000, dim: int = 384):
 def main():
     parser = argparse.ArgumentParser(
         prog="engram",
-        description="🧠 Engram Alpha: Universal Zero-Dependency Semantic Graph & RRF Memory Engine",
+        description="🧠 Engram Alpha: Sovereign Zero-Dependency Cognitive Graph & RRF Memory Engine",
     )
     subparsers = parser.add_subparsers(dest="command", required=True)
 
@@ -89,15 +93,18 @@ def main():
     p_save.add_argument("content", help="Text content to save")
     p_save.add_argument("--category", default="general", help="Category tag")
     p_save.add_argument("--importance", type=int, default=5, help="Importance level (1-10)")
+    p_save.add_argument("--project", default="default", help="Project namespace")
 
     # Extract
     p_extract = subparsers.add_parser("extract", help="Autonomous Fact & Graph Triples Extractor")
     p_extract.add_argument("text", help="Text to deconstruct into facts & graph relations")
+    p_extract.add_argument("--project", default="default", help="Project namespace")
 
     # Search
     p_search = subparsers.add_parser("search", help="Search memory with 4-Way RRF + ACT-R")
     p_search.add_argument("query", help="Search query")
     p_search.add_argument("--limit", type=int, default=5, help="Number of results")
+    p_search.add_argument("--project", default=None, help="Filter by project namespace")
 
     # Graph
     p_graph = subparsers.add_parser("graph", help="Save a knowledge graph relation")
@@ -105,19 +112,42 @@ def main():
     p_graph.add_argument("relation", help="Predicate relation (e.g. uses, links_to)")
     p_graph.add_argument("target", help="Object entity")
     p_graph.add_argument("--weight", type=float, default=1.0, help="Edge weight")
+    p_graph.add_argument("--project", default="default", help="Project namespace")
 
     # Query Graph
     p_qgraph = subparsers.add_parser("query-graph", help="Query graph relations for an entity")
     p_qgraph.add_argument("node", help="Node name to query")
     p_qgraph.add_argument("--depth", type=int, default=1, help="Hop depth (1 or 2)")
+    p_qgraph.add_argument("--project", default=None, help="Filter by project namespace")
+
+    # Inspect Visual Graph
+    p_inspect = subparsers.add_parser("inspect", help="Visualize ASCII / Mermaid graph topology")
+    p_inspect.add_argument("node", help="Entity node name to visualize")
+    p_inspect.add_argument("--depth", type=int, default=2, help="Visual depth")
+    p_inspect.add_argument("--project", default=None, help="Project namespace")
+
+    # Deduplicate
+    p_dedupe = subparsers.add_parser("dedupe", help="Semantic cluster deduplication & merge")
+    p_dedupe.add_argument("--threshold", type=float, default=0.92, help="Similarity threshold (0.80 - 0.99)")
+    p_dedupe.add_argument("--project", default=None, help="Project namespace")
 
     # Reflect
     p_reflect = subparsers.add_parser("reflect", help="Episodic Reflection & Synthesis Agent")
     p_reflect.add_argument("topic", help="Topic to synthesize into durable insights")
+    p_reflect.add_argument("--project", default="default", help="Project namespace")
 
     # Ingest Obsidian
     p_ingest = subparsers.add_parser("ingest-obsidian", help="Ingest an Obsidian vault")
     p_ingest.add_argument("vault_path", help="Path to Obsidian vault directory")
+    p_ingest.add_argument("--project", default="default", help="Project namespace")
+
+    # Watch Obsidian
+    p_watch = subparsers.add_parser("watch", help="Live real-time Obsidian vault sync daemon")
+    p_watch.add_argument("vault_path", help="Path to Obsidian vault directory")
+    p_watch.add_argument("--project", default="default", help="Project namespace")
+
+    # Checkpoint
+    subparsers.add_parser("checkpoint", help="Execute WAL checkpoint and database optimization")
 
     # Stats
     subparsers.add_parser("stats", help="Show system statistics")
@@ -132,25 +162,36 @@ def main():
     args = parser.parse_args()
 
     if args.command == "save":
-        res = save_memory(args.content, category=args.category, importance=args.importance)
+        res = save_memory(args.content, category=args.category, importance=args.importance, project=args.project)
         print(res)
     elif args.command == "extract":
-        res = extract_and_save_memory(args.text)
+        res = extract_and_save_memory(args.text, project=args.project)
         print(res)
     elif args.command == "search":
-        res = search_memory(args.query, limit=args.limit)
+        res = search_memory(args.query, limit=args.limit, project=args.project)
         print(res)
     elif args.command == "graph":
-        res = save_graph_relation(args.source, args.relation, args.target, weight=args.weight)
+        res = save_graph_relation(args.source, args.relation, args.target, weight=args.weight, project=args.project)
         print(res)
     elif args.command == "query-graph":
-        res = query_graph(args.node, depth=args.depth)
+        res = query_graph(args.node, depth=args.depth, project=args.project)
+        print(res)
+    elif args.command == "inspect":
+        res = visualize_graph(args.node, depth=args.depth, project=args.project)
+        print(res)
+    elif args.command == "dedupe":
+        res = deduplicate_memories(similarity_threshold=args.threshold, project=args.project)
         print(res)
     elif args.command == "reflect":
-        res = consolidate_reflections(args.topic)
+        res = consolidate_reflections(args.topic, project=args.project)
         print(res)
     elif args.command == "ingest-obsidian":
-        res = ingest_obsidian(args.vault_path)
+        res = ingest_obsidian(args.vault_path, project=args.project)
+        print(res)
+    elif args.command == "watch":
+        watch_obsidian_vault(args.vault_path, project=args.project)
+    elif args.command == "checkpoint":
+        res = checkpoint_db()
         print(res)
     elif args.command == "stats":
         print(get_stats())

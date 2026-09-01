@@ -1,9 +1,12 @@
 """
-Engram Alpha MCP Server (Universal Cross-Platform Architecture)
+Engram Alpha MCP Server (Production-Grade Architecture)
 Features:
-- Multi-Tier Vector Engine (Apple AMX, Linux/Windows NumPy BLAS, Pure Stdlib).
-- 4-Way Reciprocal Rank Fusion (RRF): Dense AMX + Trigram FTS5 + Graph 2-Hop + ACT-R Decay.
+- Multi-Tenant Namespaces (project, agent, session).
+- 4-Way Reciprocal Rank Fusion (RRF): Dense AMX + Trigram FTS5 + 2-Hop Graph + ACT-R Decay.
 - Embedded Autonomous Memory Agents: Fact Extractor, Reconciler, Graph Traversal, and Reflection Consolidation.
+- Semantic Deduplication Engine (Cosine Cluster Merging).
+- Knowledge Graph Visualizer (ASCII / Mermaid).
+- Multi-Transport Support (Stdio & SSE / HTTP).
 """
 
 import sys
@@ -21,12 +24,13 @@ except (ImportError, ModuleNotFoundError):
     except (ImportError, ModuleNotFoundError):
         from mcp.server import FastMCP
 
-from .core import get_db
+from .core import get_db, optimize_and_checkpoint
 from .utils import retry_db_lock
 from .amx import (
     generate_dense_embedding,
     pack_vector,
     unpack_vector,
+    amx_cosine_similarity,
     amx_batch_cosine_similarity,
     is_amx_hardware_available,
     get_acceleration_tier,
@@ -40,7 +44,14 @@ def escape_fts(text: str) -> str:
     return re.sub(r"[^\w\s]", " ", text).strip()
 
 @retry_db_lock(max_retries=7)
-def _save_node(node_type: str, content: str, importance: int = 5, category: str = "general") -> Tuple[str, List[str]]:
+def _save_node(
+    node_type: str,
+    content: str,
+    importance: int = 5,
+    category: str = "general",
+    project: str = "default",
+    agent: str = "system",
+) -> Tuple[str, List[str]]:
     conn = get_db()
     node_id = str(uuid.uuid4())
     now = datetime.now(timezone.utc).isoformat()
@@ -55,17 +66,19 @@ def _save_node(node_type: str, content: str, importance: int = 5, category: str 
     try:
         if clean_words:
             fts_query = " OR ".join(f'"{w}"' for w in clean_words)
-            for row in conn.execute("SELECT id, content FROM nodes_fts WHERE nodes_fts MATCH ?", (fts_query,)).fetchall():
+            for row in conn.execute(
+                "SELECT id, content FROM nodes_fts WHERE nodes_fts MATCH ?", (fts_query,)
+            ).fetchall():
                 row_words = set(w.lower() for w in escape_fts(row[1]).split() if len(w) > 2)
                 if len(clean_words & row_words) >= 2:
                     warnings.append(f"Conflict found (ID {row[0]}): {row[1][:60]}... Did you mean to update?")
                     
         conn.execute(
             """
-            INSERT INTO nodes (id, type, content, created_at, updated_at, access_count, last_accessed_at, embedding, importance, category)
-            VALUES (?, ?, ?, ?, ?, 0, '', ?, ?, ?)
+            INSERT INTO nodes (id, type, content, created_at, updated_at, access_count, last_accessed_at, embedding, importance, category, project, agent)
+            VALUES (?, ?, ?, ?, ?, 0, '', ?, ?, ?, ?, ?)
             """,
-            (node_id, node_type, content, now, now, packed_vec, importance, category),
+            (node_id, node_type, content, now, now, packed_vec, importance, category, project, agent),
         )
         conn.commit()
     except Exception as e:
@@ -77,15 +90,28 @@ def _save_node(node_type: str, content: str, importance: int = 5, category: str 
     return node_id, warnings
 
 @mcp.tool()
-def save_memory(content: str, category: str = "general", importance: int = 5) -> str:
-    """Save a new memory node with dense vector embedding, category, importance, and conflict detection."""
-    node_id, warnings = _save_node("memory", content, importance=importance, category=category)
+def save_memory(
+    content: str,
+    category: str = "general",
+    importance: int = 5,
+    project: str = "default",
+    agent: str = "system",
+) -> str:
+    """Save a new memory node with dense vector embedding, category, importance, project namespace, and conflict detection."""
+    node_id, warnings = _save_node(
+        "memory", content, importance=importance, category=category, project=project, agent=agent
+    )
     warn_str = f" Warnings: {warnings}" if warnings else ""
-    return f"Saved Node {node_id}.{warn_str}"
+    return f"Saved Node {node_id} (Project: {project}, Agent: {agent}).{warn_str}"
 
 @mcp.tool()
 @retry_db_lock(max_retries=7)
-def search_memory(query: str, limit: int = 5, hybrid: bool = True) -> str:
+def search_memory(
+    query: str,
+    limit: int = 5,
+    hybrid: bool = True,
+    project: Optional[str] = None,
+) -> str:
     """
     Search memory using 4-Way Reciprocal Rank Fusion (RRF):
     Fuses Dense Vector Cosine Similarity + Trigram FTS5 Lexical + Graph Spreading Activation + ACT-R Decay.
@@ -99,30 +125,35 @@ def search_memory(query: str, limit: int = 5, hybrid: bool = True) -> str:
     try:
         # 1. Lexical Candidate Retrieval via Trigram FTS5
         fts_query = f'"{safe_query}"'
-        sql_fts = """
-        SELECT n.id, n.content, n.created_at, n.last_accessed_at, n.embedding, rank, n.importance
+        project_filter = "AND n.project = ?" if project else ""
+        params = [fts_query] + ([project] if project else []) + [limit * 4]
+
+        sql_fts = f"""
+        SELECT n.id, n.content, n.created_at, n.last_accessed_at, n.embedding, rank, n.importance, n.project
         FROM nodes_fts f JOIN nodes n ON f.id=n.id
-        WHERE nodes_fts MATCH ?
+        WHERE nodes_fts MATCH ? {project_filter}
         ORDER BY rank ASC
         LIMIT ?
         """
-        fts_rows = conn.execute(sql_fts, (fts_query, limit * 4)).fetchall()
+        fts_rows = conn.execute(sql_fts, params).fetchall()
 
-        # 2. Dense Semantic Vector Retrieval (Universal Vector Engine)
+        # 2. Dense Semantic Vector Retrieval (Universal Multi-Tier Vector Engine)
         query_vec = generate_dense_embedding(query)
         all_candidate_rows = list(fts_rows)
         seen_ids = set(r[0] for r in fts_rows)
 
         if hybrid:
+            extra_filter = "AND project = ?" if project else ""
+            extra_params = ([project] if project else []) + [limit * 8]
             extra_rows = conn.execute(
-                """
-                SELECT id, content, created_at, last_accessed_at, embedding, 0.0 as rank, importance
+                f"""
+                SELECT id, content, created_at, last_accessed_at, embedding, 0.0 as rank, importance, project
                 FROM nodes
-                WHERE embedding IS NOT NULL
+                WHERE embedding IS NOT NULL {extra_filter}
                 ORDER BY rowid DESC
                 LIMIT ?
                 """,
-                (limit * 8,),
+                extra_params,
             ).fetchall()
             for r in extra_rows:
                 if r[0] not in seen_ids:
@@ -152,23 +183,24 @@ def search_memory(query: str, limit: int = 5, hybrid: bool = True) -> str:
         tokens = [w.strip() for w in safe_query.split() if len(w.strip()) > 2]
         if tokens:
             placeholders = ",".join("?" for _ in tokens)
+            edge_filter = "AND project = ?" if project else ""
+            proj_list = [project] if project else []
+            edge_params = tokens + proj_list + tokens + proj_list
             edge_rows = conn.execute(
                 f"""
-                SELECT target, weight FROM edges WHERE source IN ({placeholders})
+                SELECT target, weight FROM edges WHERE source IN ({placeholders}) {edge_filter}
                 UNION
-                SELECT source, weight FROM edges WHERE target IN ({placeholders})
+                SELECT source, weight FROM edges WHERE target IN ({placeholders}) {edge_filter}
                 """,
-                tokens + tokens,
+                edge_params,
             ).fetchall()
             for target_node, w in edge_rows:
                 graph_bonus[target_node.lower()] = graph_bonus.get(target_node.lower(), 0.0) + (w or 1.0)
 
         # 5. Compute Reciprocal Rank Fusion (RRF) Ranks
-        # Sort dense ranks
         dense_ranked = sorted(range(len(all_candidate_rows)), key=lambda i: amx_scores[i], reverse=True)
         dense_rank_map = {idx: rank + 1 for rank, idx in enumerate(dense_ranked)}
 
-        # Sort lexical ranks
         lex_ranked = sorted(range(len(all_candidate_rows)), key=lambda i: all_candidate_rows[i][5])
         lex_rank_map = {idx: rank + 1 for rank, idx in enumerate(lex_ranked)}
 
@@ -177,19 +209,18 @@ def search_memory(query: str, limit: int = 5, hybrid: bool = True) -> str:
         fused_scores = []
 
         for idx, r in enumerate(all_candidate_rows):
-            node_id, content, created_at, last_accessed_at, _, rank, importance = r
+            node_id, content, created_at, last_accessed_at, _, rank, importance, node_proj = r
             
             r_dense = dense_rank_map.get(idx, 1000)
             r_lex = lex_rank_map.get(idx, 1000)
             
-            # Graph activation
+            # Graph activation boost
             g_boost = 0.0
             content_lower = content.lower()
             for entity_term, bonus in graph_bonus.items():
                 if entity_term in content_lower:
                     g_boost += bonus * 0.25
 
-            # Base RRF Score
             rrf_score = (1.2 / (k_rrf + r_dense)) + (1.0 / (k_rrf + r_lex)) + g_boost
 
             # ACT-R Power-Law Decay
@@ -204,7 +235,7 @@ def search_memory(query: str, limit: int = 5, hybrid: bool = True) -> str:
             importance_weight = 1.0 + (importance - 5) * 0.05
 
             final_score = rrf_score * decay_multiplier * importance_weight
-            fused_scores.append((final_score, node_id, content, amx_scores[idx]))
+            fused_scores.append((final_score, node_id, content, node_proj, amx_scores[idx]))
 
         fused_scores.sort(key=lambda x: x[0], reverse=True)
         top_results = fused_scores[:limit]
@@ -213,52 +244,63 @@ def search_memory(query: str, limit: int = 5, hybrid: bool = True) -> str:
         if top_results:
             conn.execute("BEGIN IMMEDIATE;")
             now_iso = now_dt.isoformat()
-            for _, node_id, _, _ in top_results:
+            for _, node_id, _, _, _ in top_results:
                 conn.execute(
                     "UPDATE nodes SET access_count = access_count + 1, last_accessed_at = ? WHERE id = ?",
                     (now_iso, node_id),
                 )
             conn.commit()
 
-        res = [f"ID: {r[1]}\nContent: {r[2]}" for r in top_results]
+        res = [f"ID: {r[1]} [Project: {r[3]}]\nContent: {r[2]}" for r in top_results]
         return "\n\n".join(res)
     finally:
         conn.close()
 
 @mcp.tool()
 @retry_db_lock(max_retries=7)
-def extract_and_save_memory(text: str, category: str = "general", importance: int = 5) -> str:
+def extract_and_save_memory(
+    text: str,
+    category: str = "general",
+    importance: int = 5,
+    project: str = "default",
+    agent: str = "system",
+) -> str:
     """
     Autonomous Memory Extractor Agent:
-    Deconstructs incoming text into atomic facts, extracts entity triples for the knowledge graph,
+    Deconstructs text into atomic facts, extracts entity triples for the knowledge graph,
     and indexes 384d semantic vectors.
     """
-    # 1. Save core memory node
-    node_id, warnings = _save_node("fact", text, importance=importance, category=category)
+    node_id, warnings = _save_node(
+        "fact", text, importance=importance, category=category, project=project, agent=agent
+    )
     
-    # 2. Extract potential entity triples & wikilinks
-    # Matches patterns like: [Subject] [verb/relation] [Object] or [[Entity]]
     conn = get_db()
     conn.execute("BEGIN IMMEDIATE;")
     created_edges = []
     try:
+        now = datetime.now(timezone.utc).isoformat()
         wikilinks = re.findall(r"\[\[([^\]\|]+)(?:\|[^\]]+)?\]\]", text)
         for link in wikilinks:
             conn.execute(
-                "INSERT OR IGNORE INTO edges (source, target, relation, weight, created_at) VALUES (?, ?, ?, 1.0, ?)",
-                (node_id, link.strip(), "references", datetime.now(timezone.utc).isoformat()),
+                """
+                INSERT OR IGNORE INTO edges (source, target, relation, weight, created_at, project)
+                VALUES (?, ?, ?, 1.0, ?, ?)
+                """,
+                (node_id, link.strip(), "references", now, project),
             )
             created_edges.append(f"[{node_id}] -[references]-> [{link.strip()}]")
 
-        # Heuristic triple detection: "X uses Y", "X requires Y", "X is Y"
         triple_matches = re.findall(
             r"(\b[A-Z][a-zA-Z0-9_\-]+\b)\s+(uses|requires|connects_to|replaces|implements|is_a)\s+(\b[A-Z][a-zA-Z0-9_\-]+\b)",
             text,
         )
         for s, r, o in triple_matches:
             conn.execute(
-                "INSERT OR IGNORE INTO edges (source, target, relation, weight, created_at) VALUES (?, ?, ?, 1.0, ?)",
-                (s.strip(), o.strip(), r.strip().lower(), datetime.now(timezone.utc).isoformat()),
+                """
+                INSERT OR IGNORE INTO edges (source, target, relation, weight, created_at, project)
+                VALUES (?, ?, ?, 1.0, ?, ?)
+                """,
+                (s.strip(), o.strip(), r.strip().lower(), now, project),
             )
             created_edges.append(f"[{s.strip()}] -[{r.strip().lower()}]-> [{o.strip()}]")
 
@@ -269,19 +311,28 @@ def extract_and_save_memory(text: str, category: str = "general", importance: in
         conn.close()
 
     edge_str = f"\nExtracted Triples: {created_edges}" if created_edges else ""
-    return f"Extracted & Saved Node {node_id}.{edge_str}"
+    return f"Extracted & Saved Node {node_id} (Project: {project}).{edge_str}"
 
 @mcp.tool()
 @retry_db_lock(max_retries=7)
-def save_graph_relation(source: str, relation: str, target: str, weight: float = 1.0) -> str:
+def save_graph_relation(
+    source: str,
+    relation: str,
+    target: str,
+    weight: float = 1.0,
+    project: str = "default",
+) -> str:
     """Save a strict Subject-Predicate-Object relation for Knowledge Graph traversal."""
     conn = get_db()
     conn.execute("BEGIN IMMEDIATE;")
     try:
         now = datetime.now(timezone.utc).isoformat()
         conn.execute(
-            "INSERT OR REPLACE INTO edges (source, target, relation, weight, created_at) VALUES (?, ?, ?, ?, ?)",
-            (source.strip(), target.strip(), relation.strip().lower(), float(weight), now),
+            """
+            INSERT OR REPLACE INTO edges (source, target, relation, weight, created_at, project)
+            VALUES (?, ?, ?, ?, ?, ?)
+            """,
+            (source.strip(), target.strip(), relation.strip().lower(), float(weight), now, project),
         )
         conn.commit()
     except Exception as e:
@@ -289,33 +340,34 @@ def save_graph_relation(source: str, relation: str, target: str, weight: float =
         raise e
     finally:
         conn.close()
-    return f"Saved edge: [{source}] -[{relation}]-> [{target}] (weight: {weight})"
+    return f"Saved edge: [{source}] -[{relation}]-> [{target}] (weight: {weight}, project: {project})"
 
 @mcp.tool()
 @retry_db_lock(max_retries=7)
-def query_graph(node: str, depth: int = 1) -> str:
+def query_graph(node: str, depth: int = 1, project: Optional[str] = None) -> str:
     """
     Query knowledge graph relations with 1-hop and 2-hop spreading activation traversal.
     """
     conn = get_db()
     try:
         node_clean = node.strip()
-        # 1-hop
+        proj_filter = "AND project = ?" if project else ""
+        params_1 = [node_clean, node_clean] + ([project] if project else [])
+
         rows_1 = conn.execute(
-            """
-            SELECT source, relation, target, weight FROM edges
-            WHERE source = ? OR target = ?
+            f"""
+            SELECT source, relation, target, weight, project FROM edges
+            WHERE (source = ? OR target = ?) {proj_filter}
             LIMIT 50
             """,
-            (node_clean, node_clean),
+            params_1,
         ).fetchall()
 
         if not rows_1:
             return f"No graph edges found for node '{node_clean}'."
 
-        triples = [f"[{r[0]}] -[{r[1]}]-> [{r[2]}] (w: {r[3]})" for r in rows_1]
+        triples = [f"[{r[0]}] -[{r[1]}]-> [{r[2]}] (w: {r[3]}, project: {r[4]})" for r in rows_1]
 
-        # 2-hop if depth >= 2
         if depth >= 2:
             neighbors = set()
             for r in rows_1:
@@ -324,17 +376,18 @@ def query_graph(node: str, depth: int = 1) -> str:
 
             if neighbors:
                 placeholders = ",".join("?" for _ in neighbors)
+                params_2 = list(neighbors) + list(neighbors) + ([project] if project else []) + [node_clean, node_clean]
                 rows_2 = conn.execute(
                     f"""
-                    SELECT source, relation, target, weight FROM edges
-                    WHERE (source IN ({placeholders}) OR target IN ({placeholders}))
+                    SELECT source, relation, target, weight, project FROM edges
+                    WHERE (source IN ({placeholders}) OR target IN ({placeholders})) {proj_filter}
                     AND source != ? AND target != ?
                     LIMIT 50
                     """,
-                    list(neighbors) + list(neighbors) + [node_clean, node_clean],
+                    params_2,
                 ).fetchall()
                 for r in rows_2:
-                    t_str = f"  (2-hop) [{r[0]}] -[{r[1]}]-> [{r[2]}] (w: {r[3]})"
+                    t_str = f"  (2-hop) [{r[0]}] -[{r[1]}]-> [{r[2]}] (w: {r[3]}, project: {r[4]})"
                     if t_str not in triples:
                         triples.append(t_str)
 
@@ -344,44 +397,146 @@ def query_graph(node: str, depth: int = 1) -> str:
 
 @mcp.tool()
 @retry_db_lock(max_retries=7)
-def consolidate_reflections(topic: str) -> str:
+def deduplicate_memories(similarity_threshold: float = 0.92, project: Optional[str] = None) -> str:
+    """
+    Autonomous Memory Deduplication & Semantic Merging Agent:
+    Finds clusters of duplicate/near-identical memory nodes, merges access counts and edges,
+    and prunes redundant duplicate records to maintain clean context.
+    """
+    conn = get_db()
+    try:
+        filter_str = "WHERE embedding IS NOT NULL"
+        params = []
+        if project:
+            filter_str += " AND project = ?"
+            params.append(project)
+
+        rows = conn.execute(f"SELECT id, content, embedding, access_count, importance FROM nodes {filter_str}", params).fetchall()
+        if len(rows) < 2:
+            return "Insufficient records to deduplicate."
+
+        vectors = [unpack_vector(r[2]) for r in rows if r[2]]
+        merged_count = 0
+        deleted_ids = set()
+
+        conn.execute("BEGIN IMMEDIATE;")
+        for i in range(len(rows)):
+            if rows[i][0] in deleted_ids:
+                continue
+            for j in range(i + 1, len(rows)):
+                if rows[j][0] in deleted_ids:
+                    continue
+                
+                sim = amx_cosine_similarity(vectors[i], vectors[j])
+                if sim >= similarity_threshold:
+                    # Keep i, merge j into i
+                    primary_id = rows[i][0]
+                    dup_id = rows[j][0]
+                    
+                    # Boost primary access count and importance
+                    combined_access = rows[i][3] + rows[j][3] + 1
+                    max_importance = max(rows[i][4], rows[j][4])
+                    
+                    conn.execute(
+                        "UPDATE nodes SET access_count = ?, importance = ? WHERE id = ?",
+                        (combined_access, max_importance, primary_id),
+                    )
+                    
+                    # Re-point edges
+                    conn.execute("UPDATE OR IGNORE edges SET source = ? WHERE source = ?", (primary_id, dup_id))
+                    conn.execute("UPDATE OR IGNORE edges SET target = ? WHERE target = ?", (primary_id, dup_id))
+                    
+                    # Delete duplicate
+                    conn.execute("DELETE FROM nodes WHERE id = ?", (dup_id,))
+                    deleted_ids.add(dup_id)
+                    merged_count += 1
+
+        conn.commit()
+        return f"Deduplication Complete: Evaluated {len(rows)} nodes, merged and pruned {merged_count} duplicate records."
+    finally:
+        conn.close()
+
+@mcp.tool()
+@retry_db_lock(max_retries=7)
+def visualize_graph(node: str, depth: int = 2, project: Optional[str] = None) -> str:
+    """
+    Knowledge Graph Topology Visualizer:
+    Generates Mermaid.js and ASCII relational network diagrams for power users.
+    """
+    graph_text = query_graph(node, depth=depth, project=project)
+    if "No graph edges found" in graph_text:
+        return graph_text
+
+    mermaid_lines = ["```mermaid", "graph LR", f'  root["{node}"]:::primary']
+    ascii_lines = [f"Topology for [{node}]:"]
+
+    edges = re.findall(r"\[([^\]]+)\]\s+-\[([^\]]+)\]->\s+\[([^\]]+)\]", graph_text)
+    for s, r, o in edges:
+        s_safe = s.replace('"', '')
+        o_safe = o.replace('"', '')
+        r_safe = r.replace('"', '')
+        mermaid_lines.append(f'  "{s_safe}" -- "{r_safe}" --> "{o_safe}"')
+        ascii_lines.append(f"  [{s_safe}] ──({r_safe})──► [{o_safe}]")
+
+    mermaid_lines.append("  classDef primary fill:#ff79c6,stroke:#bd93f9,stroke-width:2px,color:#fff;")
+    mermaid_lines.append("```")
+
+    return "\n".join(ascii_lines) + "\n\n" + "\n".join(mermaid_lines)
+
+@mcp.tool()
+@retry_db_lock(max_retries=7)
+def consolidate_reflections(topic: str, project: str = "default") -> str:
     """
     Autonomous Memory Reflector Agent (Episodic Reflection):
     Synthesizes low-level episodic nodes into durable high-level insights.
     """
     conn = get_db()
     try:
-        # Fetch top relevant memories for the topic
         safe_topic = escape_fts(topic)
         fts_query = f'"{safe_topic}"' if safe_topic else '""'
         
         rows = conn.execute(
             """
             SELECT n.id, n.content, n.importance FROM nodes_fts f JOIN nodes n ON f.id=n.id
-            WHERE nodes_fts MATCH ?
+            WHERE nodes_fts MATCH ? AND n.project = ?
             ORDER BY n.access_count DESC, n.importance DESC
             LIMIT 10
             """,
-            (fts_query,),
+            (fts_query, project),
         ).fetchall()
 
         if not rows:
-            return f"Insufficient memories found for topic '{topic}' to consolidate."
+            return f"Insufficient memories found for topic '{topic}' in project '{project}' to consolidate."
 
         summary_points = [f"- {r[1][:100]}..." for r in rows]
-        reflection_content = f"[Consolidated Reflection on '{topic}']:\nSynthesized from {len(rows)} memory records:\n" + "\n".join(summary_points)
+        reflection_content = (
+            f"[Consolidated Reflection on '{topic}'] (Project: {project}):\n"
+            f"Synthesized from {len(rows)} memory records:\n" + "\n".join(summary_points)
+        )
 
-        # Save synthesized reflection node with higher importance
-        ref_id, _ = _save_node("reflection", reflection_content, importance=9, category="reflection")
+        ref_id, _ = _save_node(
+            "reflection", reflection_content, importance=9, category="reflection", project=project
+        )
         return f"Created Consolidated Reflection (Node {ref_id}):\n{reflection_content}"
     finally:
         conn.close()
 
 @mcp.tool()
-def ingest_obsidian(vault_path: str) -> str:
+def ingest_obsidian(vault_path: str, project: str = "default") -> str:
     """Ingest an entire Obsidian markdown vault into the knowledge graph and vector store."""
-    res = ingest_obsidian_vault(vault_path)
-    return f"Ingestion Complete: {res['files_processed']} files, {res['nodes_created']} nodes, {res['edges_created']} graph edges created."
+    res = ingest_obsidian_vault(vault_path, project=project)
+    return f"Ingestion Complete: {res['files_processed']} files, {res['nodes_created']} nodes, {res['edges_created']} graph edges created (Project: {project})."
+
+@mcp.tool()
+@retry_db_lock(max_retries=7)
+def checkpoint_db() -> str:
+    """Execute WAL flush, vacuum, and performance optimization."""
+    conn = get_db()
+    try:
+        res = optimize_and_checkpoint(conn)
+        return f"Database Checkpoint Status: {res}"
+    finally:
+        conn.close()
 
 @mcp.tool()
 @retry_db_lock(max_retries=7)
@@ -391,13 +546,15 @@ def get_stats() -> str:
     try:
         node_count = conn.execute("SELECT COUNT(*) FROM nodes;").fetchone()[0]
         edge_count = conn.execute("SELECT COUNT(*) FROM edges;").fetchone()[0]
+        projects = [r[0] for r in conn.execute("SELECT DISTINCT project FROM nodes;").fetchall()]
         tier_status = get_acceleration_tier()
         return (
             f"🧠 Engram Alpha Universal MCP Stats:\n"
             f"- Total Memories / Nodes: {node_count}\n"
             f"- Knowledge Graph Edges: {edge_count}\n"
+            f"- Active Projects / Namespaces: {projects}\n"
             f"- Hardware Engine Tier: {tier_status}\n"
-            f"- Architecture: Cross-Platform (Linux, macOS, Windows, Docker)"
+            f"- Architecture: Cross-Platform Production Standard (macOS, Linux, Windows, Docker)"
         )
     finally:
         conn.close()
