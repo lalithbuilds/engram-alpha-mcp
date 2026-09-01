@@ -10,6 +10,7 @@ import sys
 import os
 import math
 import struct
+import threading
 import ctypes
 import ctypes.util
 from typing import List, Tuple, Optional, Dict, Any
@@ -200,18 +201,40 @@ def amx_batch_cosine_similarity(
     # Pure Stdlib Matrix Dispatch (Tier 3)
     return [compute_similarity_pure_python(query_vec, cand) for cand in candidate_matrix]
 
+_EMBEDDING_MODEL = None
+_EMBEDDING_LOCK = threading.Lock()
+_FASTEMBED_PROBED = False
+
+def get_embedding_model():
+    """Thread-safe lazy singleton for neural embedding model."""
+    global _EMBEDDING_MODEL, _FASTEMBED_PROBED
+    if _FASTEMBED_PROBED and _EMBEDDING_MODEL is None:
+        return None
+    if _EMBEDDING_MODEL is None:
+        with _EMBEDDING_LOCK:
+            if _EMBEDDING_MODEL is None and not _FASTEMBED_PROBED:
+                try:
+                    from fastembed import TextEmbedding
+                    _EMBEDDING_MODEL = TextEmbedding(model_name="BAAI/bge-small-en-v1.5")
+                except Exception:
+                    _EMBEDDING_MODEL = None
+                finally:
+                    _FASTEMBED_PROBED = True
+    return _EMBEDDING_MODEL
+
 def generate_dense_embedding(text: str, dim: int = 384) -> List[float]:
     """
-    Generates a deterministic 384-dimensional dense semantic vector on any OS.
-    Standardized across all architectures with zero required external dependencies.
+    Generates a high-precision 384-dimensional dense semantic vector on any OS.
+    Uses cached BAAI/bge-small-en-v1.5 neural model if available (~5ms latency),
+    or deterministic 384d semantic hypersphere projection as zero-dependency fallback.
     """
-    try:
-        from fastembed import TextEmbedding
-        model = TextEmbedding(model_name="BAAI/bge-small-en-v1.5")
-        embeddings = list(model.embed([text]))
-        return [float(x) for x in embeddings[0]]
-    except Exception:
-        pass
+    model = get_embedding_model()
+    if model is not None:
+        try:
+            embeddings = list(model.embed([text]))
+            return [float(x) for x in embeddings[0]]
+        except Exception:
+            pass
 
     # Universal Deterministic High-Dimensional Hashed Semantic Projection
     # Distributes word n-grams uniformly across 384-dimensional hypersphere

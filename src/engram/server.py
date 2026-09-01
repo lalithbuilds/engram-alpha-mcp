@@ -149,21 +149,24 @@ def search_memory(
         """
         fts_rows = conn.execute(sql_fts, params).fetchall()
 
-        # 2. Dense Semantic Vector Retrieval (Universal Multi-Tier Vector Engine)
+        # 2. Dense Semantic Vector Retrieval (Universal Multi-Tier Hardware Vector Engine)
         query_vec = generate_dense_embedding(query)
         all_candidate_rows = list(fts_rows)
         seen_ids = set(r[0] for r in fts_rows)
 
         if hybrid:
-            extra_filter = "AND project = ?" if project else ""
-            extra_params = ([project] if project else []) + [limit * 8]
+            extra_filter = "WHERE embedding IS NOT NULL"
+            extra_params = []
+            if project:
+                extra_filter += " AND project = ?"
+                extra_params.append(project)
+
+            # Evaluate all active nodes in namespace without artificial recency windowing
             extra_rows = conn.execute(
                 f"""
                 SELECT id, content, created_at, last_accessed_at, embedding, 0.0 as rank, importance, project
                 FROM nodes
-                WHERE embedding IS NOT NULL {extra_filter}
-                ORDER BY rowid DESC
-                LIMIT ?
+                {extra_filter}
                 """,
                 extra_params,
             ).fetchall()
@@ -175,7 +178,7 @@ def search_memory(
         if not all_candidate_rows:
             return "No relevant memories found."
 
-        # 3. Batch Vector Cosine Scoring
+        # 3. Hardware Batch Vector Cosine Scoring (AMX / C-BLAS / Pure Stdlib)
         candidate_vectors = []
         valid_indices = []
         for i, row in enumerate(all_candidate_rows):
@@ -190,24 +193,45 @@ def search_memory(
             for idx, cos_sim in zip(valid_indices, cos_scores):
                 amx_scores[idx] = max(0.0, float(cos_sim))
 
-        # 4. Graph Spreading Activation (1-hop & 2-hop edge boosts)
+        # 4. True 2-Hop Graph Spreading Activation (Recursive CTE)
         graph_bonus = {}
         tokens = [w.strip() for w in safe_query.split() if len(w.strip()) > 2]
         if tokens:
             placeholders = ",".join("?" for _ in tokens)
             edge_filter = "AND project = ?" if project else ""
-            proj_list = [project] if project else []
-            edge_params = tokens + proj_list + tokens + proj_list
-            edge_rows = conn.execute(
-                f"""
-                SELECT target, weight FROM edges WHERE source IN ({placeholders}) {edge_filter}
-                UNION
-                SELECT source, weight FROM edges WHERE target IN ({placeholders}) {edge_filter}
-                """,
-                edge_params,
-            ).fetchall()
-            for target_node, w in edge_rows:
-                graph_bonus[target_node.lower()] = graph_bonus.get(target_node.lower(), 0.0) + (w or 1.0)
+            proj_params = [project] if project else []
+
+            cte_sql = f"""
+            WITH RECURSIVE graph_walk AS (
+                SELECT source, target, relation, weight, 1 as depth, target as entity, weight as activation
+                FROM edges
+                WHERE source IN ({placeholders}) {edge_filter}
+                UNION ALL
+                SELECT source, target, relation, weight, 1 as depth, source as entity, weight as activation
+                FROM edges
+                WHERE target IN ({placeholders}) {edge_filter}
+                UNION ALL
+                SELECT e.source, e.target, e.relation, e.weight, gw.depth + 1,
+                       CASE WHEN e.source = gw.entity THEN e.target ELSE e.source END as entity,
+                       gw.activation * 0.5 * e.weight as activation
+                FROM edges e
+                JOIN graph_walk gw ON (e.source = gw.entity OR e.target = gw.entity)
+                WHERE gw.depth < 2 {edge_filter.replace('project', 'e.project')}
+            )
+            SELECT entity, MAX(activation) as max_act
+            FROM graph_walk
+            GROUP BY entity;
+            """
+            try:
+                edge_rows = conn.execute(
+                    cte_sql,
+                    tokens + proj_params + tokens + proj_params + (proj_params if project else [])
+                ).fetchall()
+                for target_node, act in edge_rows:
+                    if target_node:
+                        graph_bonus[target_node.lower()] = max(graph_bonus.get(target_node.lower(), 0.0), float(act or 1.0))
+            except Exception:
+                pass
 
         # 5. Compute Reciprocal Rank Fusion (RRF) Ranks
         dense_ranked = sorted(range(len(all_candidate_rows)), key=lambda i: amx_scores[i], reverse=True)
@@ -302,19 +326,34 @@ def extract_and_save_memory(
             )
             created_edges.append(f"[{node_id}] -[references]-> [{link.strip()}]")
 
-        triple_matches = re.findall(
-            r"(\b[A-Z][a-zA-Z0-9_\-]+\b)\s+(uses|requires|connects_to|replaces|implements|is_a)\s+(\b[A-Z][a-zA-Z0-9_\-]+\b)",
-            text,
-        )
-        for s, r, o in triple_matches:
-            conn.execute(
-                """
-                INSERT OR IGNORE INTO edges (source, target, relation, weight, created_at, project)
-                VALUES (?, ?, ?, 1.0, ?, ?)
-                """,
-                (s.strip(), o.strip(), r.strip().lower(), now, project),
-            )
-            created_edges.append(f"[{s.strip()}] -[{r.strip().lower()}]-> [{o.strip()}]")
+        # Expanded Natural Language Triple & Entity Relation Extraction
+        patterns = [
+            # Standard Entity Verb Entity: Postgres uses WAL / React implements Flux
+            r"(\b[a-zA-Z0-9_\-\.]{2,30}\b)\s+(uses|using|requires|prefer|prefers|connects_to|replaces|implements|is_a|depends_on|runs_on)\s+(\b[a-zA-Z0-9_\-\.]{2,30}\b)",
+            # Conversational: We use Postgres / System runs on Linux / I prefer pnpm
+            r"(?:We|we|System|system|I|Our stack|our stack)\s+(use|uses|using|prefer|prefers|run|runs|deploy|deploys|switched to|replaces|depends on)\s+([a-zA-Z0-9_\-\.]{2,30})",
+        ]
+        
+        for pat in patterns:
+            for match in re.finditer(pat, text, re.IGNORECASE):
+                groups = match.groups()
+                if len(groups) == 3:
+                    s, r, o = groups
+                elif len(groups) == 2:
+                    s, r, o = "Architecture", groups[0].lower().replace(" ", "_"), groups[1]
+                else:
+                    continue
+                
+                s_clean, r_clean, o_clean = s.strip(), r.strip().lower().replace(" ", "_"), o.strip()
+                if s_clean.lower() not in ("we", "the", "a", "an") and o_clean.lower() not in ("a", "an", "the", "it", "to", "for"):
+                    conn.execute(
+                        """
+                        INSERT OR IGNORE INTO edges (source, target, relation, weight, created_at, project)
+                        VALUES (?, ?, ?, 1.0, ?, ?)
+                        """,
+                        (s_clean, o_clean, r_clean, now, project),
+                    )
+                    created_edges.append(f"[{s_clean}] -[{r_clean}]-> [{o_clean}]")
 
         conn.commit()
     except Exception as e:
@@ -449,30 +488,30 @@ def deduplicate_memories(similarity_threshold: float = 0.92, project: Optional[s
         for i in range(len(rows)):
             if rows[i][0] in deleted_ids:
                 continue
-            for j in range(i + 1, len(rows)):
-                if rows[j][0] in deleted_ids:
+            primary_id = rows[i][0]
+            remaining_indices = [j for j in range(i + 1, len(rows)) if rows[j][0] not in deleted_ids]
+            if not remaining_indices:
+                continue
+
+            candidate_vecs = [vectors[j] for j in remaining_indices]
+            sims = amx_batch_cosine_similarity(vectors[i], candidate_vecs)
+
+            for j_idx, sim in zip(remaining_indices, sims):
+                if rows[j_idx][0] in deleted_ids:
                     continue
-                
-                sim = amx_cosine_similarity(vectors[i], vectors[j])
                 if sim >= similarity_threshold:
-                    # Keep i, merge j into i
-                    primary_id = rows[i][0]
-                    dup_id = rows[j][0]
-                    
-                    # Boost primary access count and importance
-                    combined_access = rows[i][3] + rows[j][3] + 1
-                    max_importance = max(rows[i][4], rows[j][4])
-                    
+                    dup_id = rows[j_idx][0]
+                    combined_access = rows[i][3] + rows[j_idx][3] + 1
+                    max_importance = max(rows[i][4], rows[j_idx][4])
+
                     conn.execute(
                         "UPDATE nodes SET access_count = ?, importance = ? WHERE id = ?",
                         (combined_access, max_importance, primary_id),
                     )
-                    
-                    # Re-point edges
+
                     conn.execute("UPDATE OR IGNORE edges SET source = ? WHERE source = ?", (primary_id, dup_id))
                     conn.execute("UPDATE OR IGNORE edges SET target = ? WHERE target = ?", (primary_id, dup_id))
-                    
-                    # Delete duplicate
+
                     conn.execute("DELETE FROM nodes WHERE id = ?", (dup_id,))
                     deleted_ids.add(dup_id)
                     merged_count += 1

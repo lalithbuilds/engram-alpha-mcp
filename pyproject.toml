@@ -4,8 +4,8 @@ build-backend = "hatchling.build"
 
 [project]
 name = "engram"
-version = "2.0.0"
-description = "Engram Alpha: Zero-dependency Semantic Graph MCP Memory Server"
+version = "2.1.0"
+description = "Engram Alpha: Sovereign Semantic Graph MCP Memory Engine with Hardware AMX & 4-Way RRF"
 readme = "README.md"
 requires-python = ">=3.10"
 license = { text = "MIT" }
@@ -15,17 +15,17 @@ dependencies = [
 
 [project.optional-dependencies]
 local = [
+    "fastembed>=0.4.0",
     "sqlite-vec>=0.1.1",
+    "numpy>=1.24.0",
     "onnxruntime>=1.15.0",
-    "huggingface-hub>=0.23.0",
-    "platformdirs>=4.0.0",
-    "tokenizers>=0.19.0"
+    "tokenizers>=0.19.0",
 ]
 mac = [
-    "pysqlite3-binary>=0.5.2"
+    "pysqlite3-binary>=0.5.2",
 ]
 all = [
-    "engram[local,mac]"
+    "engram[local,mac]",
 ]
 
 [project.scripts]
