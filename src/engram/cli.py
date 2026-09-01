@@ -128,7 +128,10 @@ def cmd_import(file_path: str, project: str = None):
     for n in nodes:
         content = n.get("content", "")
         cat = n.get("category", "general")
-        imp = int(n.get("importance", 5))
+        try:
+            imp = int(n.get("importance", 5))
+        except (ValueError, TypeError):
+            imp = 5
         proj = project if project is not None else n.get("project", "default")
         save_memory(content, category=cat, importance=imp, project=proj)
         imported_nodes += 1
@@ -138,7 +141,10 @@ def cmd_import(file_path: str, project: str = None):
         s = e.get("source", "")
         t = e.get("target", "")
         r = e.get("relation", "connects_to")
-        w = float(e.get("weight", 1.0))
+        try:
+            w = float(e.get("weight", 1.0))
+        except (ValueError, TypeError):
+            w = 1.0
         proj = project if project is not None else e.get("project", "default")
         vf = e.get("valid_from", "")
         vu = e.get("valid_until", "")

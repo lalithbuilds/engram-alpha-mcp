@@ -624,10 +624,12 @@ def auto_context(limit: int = 5, min_importance: int = 7, project: Optional[str]
     Auto-Context Boot Tool for Agents:
     Recalls top high-importance active memories formatted in XML for session initialization.
     """
+    limit_clamped = max(1, min(100, int(limit)))
+    min_imp_clamped = max(1, min(10, int(min_importance)))
     conn = get_db()
     try:
         proj_filter = "AND project = ?" if project else ""
-        params = [min_importance] + ([project] if project else []) + [limit]
+        params = [min_imp_clamped] + ([project] if project else []) + [limit_clamped]
         rows = conn.execute(
             f"""
             SELECT id, category, content, importance, project, created_at
@@ -683,9 +685,9 @@ def edit_memory(
         if not row:
             return f"Error: Memory with ID '{id}' not found."
 
-        new_content = content if content is not None else row[1]
-        new_imp = importance if importance is not None else row[2]
-        new_cat = category if category is not None else row[3]
+        new_content = str(content)[:100000] if content is not None else row[1]
+        new_imp = max(1, min(10, int(importance))) if importance is not None else row[2]
+        new_cat = category.strip() if category is not None else row[3]
         now_iso = datetime.now(timezone.utc).isoformat()
 
         dense_vec = generate_dense_embedding(new_content)

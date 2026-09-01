@@ -262,7 +262,10 @@ class EngramHTTPHandler(BaseHTTPRequestHandler):
 
         if path == "/search":
             q = params.get("q", [""])[0]
-            limit = int(params.get("limit", [5])[0])
+            try:
+                limit = int(params.get("limit", [5])[0])
+            except (ValueError, TypeError):
+                limit = 5
             project = params.get("project", [None])[0]
             res = search_memory(q, limit=limit, project=project)
             self.wfile.write(json.dumps({"query": q, "results": res, "project": project}).encode("utf-8"))
@@ -270,7 +273,10 @@ class EngramHTTPHandler(BaseHTTPRequestHandler):
 
         elif path == "/graph":
             node = params.get("node", [""])[0]
-            depth = int(params.get("depth", [2])[0])
+            try:
+                depth = int(params.get("depth", [2])[0])
+            except (ValueError, TypeError):
+                depth = 2
             project = params.get("project", [None])[0]
             res = query_graph(node, depth=depth, project=project)
             self.wfile.write(json.dumps({"node": node, "depth": depth, "graph": res}).encode("utf-8"))
@@ -296,8 +302,21 @@ class EngramHTTPHandler(BaseHTTPRequestHandler):
             self.wfile.write(json.dumps({"error": "Unauthorized. Provide valid Bearer token in Authorization header."}).encode("utf-8"))
             return
 
-        content_length = int(self.headers.get("Content-Length", 0))
-        body = self.rfile.read(content_length).decode("utf-8") if content_length > 0 else "{}"
+        try:
+            content_length = int(self.headers.get("Content-Length", 0))
+        except (ValueError, TypeError):
+            content_length = 0
+
+        # Enforce 10MB payload size limit
+        if content_length > 10 * 1024 * 1024:
+            self.send_response(413)
+            self.send_header("Content-Type", "application/json")
+            self._send_cors_headers()
+            self.end_headers()
+            self.wfile.write(json.dumps({"error": "Payload Too Large (max 10MB)."}).encode("utf-8"))
+            return
+
+        body = self.rfile.read(content_length).decode("utf-8", errors="replace") if content_length > 0 else "{}"
         
         try:
             data = json.loads(body)
@@ -312,7 +331,10 @@ class EngramHTTPHandler(BaseHTTPRequestHandler):
         if path == "/save":
             content = data.get("content", "")
             category = data.get("category", "general")
-            importance = int(data.get("importance", 5))
+            try:
+                importance = int(data.get("importance", 5))
+            except (ValueError, TypeError):
+                importance = 5
             project = data.get("project", "default")
             res = save_memory(content, category=category, importance=importance, project=project)
             self.wfile.write(json.dumps({"status": "success", "message": res}).encode("utf-8"))
