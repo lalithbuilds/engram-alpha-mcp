@@ -11,21 +11,24 @@ from pathlib import Path
 
 os.environ["ENGRAM_DB_PATH"] = "test_perf_budgets.sqlite"
 
-from engram.core import init_db
+from engram.core import init_db, _INITIALIZED_PATHS
 from engram.server import save_memory, search_memory, save_graph_relation, query_graph
 from engram.amx import amx_batch_cosine_similarity
 
 @pytest.fixture(scope="module", autouse=True)
 def setup_db():
-    if os.path.exists("test_perf_budgets.sqlite"):
-        try: os.remove("test_perf_budgets.sqlite")
-        except: pass
-    init_db()
+    for f in ["test_perf_budgets.sqlite", "test_perf_budgets.sqlite-wal", "test_perf_budgets.sqlite-shm"]:
+        if os.path.exists(f):
+            try: os.remove(f)
+            except Exception: pass
+    _INITIALIZED_PATHS.clear()
+    init_db(force=True)
     yield
     for f in ["test_perf_budgets.sqlite", "test_perf_budgets.sqlite-wal", "test_perf_budgets.sqlite-shm"]:
         if os.path.exists(f):
             try: os.remove(f)
-            except: pass
+            except Exception: pass
+    _INITIALIZED_PATHS.clear()
 
 def test_vector_throughput_budget():
     """Assert hardware vector batch throughput exceeds 40,000 evaluations/second."""

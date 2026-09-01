@@ -10,7 +10,7 @@ from pathlib import Path
 
 os.environ["ENGRAM_DB_PATH"] = "test_engram_v4.sqlite"
 
-from engram.core import init_db, get_db, check_storage_liveness, optimize_and_checkpoint
+from engram.core import init_db, get_db, check_storage_liveness, optimize_and_checkpoint, _INITIALIZED_PATHS
 from engram.server import (
     save_memory,
     search_memory,
@@ -25,10 +25,22 @@ from engram.server import (
 )
 from engram.amx import get_acceleration_tier
 
+@pytest.fixture(scope="module", autouse=True)
+def setup_db():
+    for f in ["test_engram_v4.sqlite", "test_engram_v4.sqlite-wal", "test_engram_v4.sqlite-shm"]:
+        if os.path.exists(f):
+            try: os.remove(f)
+            except Exception: pass
+    _INITIALIZED_PATHS.clear()
+    init_db(force=True)
+    yield
+    for f in ["test_engram_v4.sqlite", "test_engram_v4.sqlite-wal", "test_engram_v4.sqlite-shm"]:
+        if os.path.exists(f):
+            try: os.remove(f)
+            except Exception: pass
+    _INITIALIZED_PATHS.clear()
+
 def test_database_initialization():
-    if os.path.exists("test_engram_v4.sqlite"):
-        os.remove("test_engram_v4.sqlite")
-        
     conn = get_db()
     res = conn.execute("PRAGMA journal_mode;").fetchone()
     assert res[0].lower() == 'wal'

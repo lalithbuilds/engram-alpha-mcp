@@ -11,20 +11,23 @@ import pytest
 
 os.environ["ENGRAM_DB_PATH"] = "test_sqlite_vec.sqlite"
 
-from engram.core import init_db, get_db
+from engram.core import init_db, get_db, _INITIALIZED_PATHS
 from engram.server import save_memory, search_memory, extract_and_save_memory, query_graph
 
 @pytest.fixture(scope="module", autouse=True)
 def setup_db():
-    if os.path.exists("test_sqlite_vec.sqlite"):
-        try: os.remove("test_sqlite_vec.sqlite")
-        except: pass
+    for f in ["test_sqlite_vec.sqlite", "test_sqlite_vec.sqlite-wal", "test_sqlite_vec.sqlite-shm"]:
+        if os.path.exists(f):
+            try: os.remove(f)
+            except Exception: pass
+    _INITIALIZED_PATHS.clear()
     init_db(force=True)
     yield
     for f in ["test_sqlite_vec.sqlite", "test_sqlite_vec.sqlite-wal", "test_sqlite_vec.sqlite-shm"]:
         if os.path.exists(f):
             try: os.remove(f)
-            except: pass
+            except Exception: pass
+    _INITIALIZED_PATHS.clear()
 
 def test_sqlite_vec_virtual_table_sync():
     conn = get_db()

@@ -25,15 +25,18 @@ from engram.amx import get_embedding_model
 
 @pytest.fixture(scope="module", autouse=True)
 def setup_db():
-    if os.path.exists("test_auditor_final.sqlite"):
-        try: os.remove("test_auditor_final.sqlite")
-        except: pass
+    for f in ["test_auditor_final.sqlite", "test_auditor_final.sqlite-wal", "test_auditor_final.sqlite-shm"]:
+        if os.path.exists(f):
+            try: os.remove(f)
+            except Exception: pass
+    _INITIALIZED_PATHS.clear()
     init_db(force=True)
     yield
     for f in ["test_auditor_final.sqlite", "test_auditor_final.sqlite-wal", "test_auditor_final.sqlite-shm"]:
         if os.path.exists(f):
             try: os.remove(f)
-            except: pass
+            except Exception: pass
+    _INITIALIZED_PATHS.clear()
 
 def test_initialized_paths_fast_path():
     from pathlib import Path
