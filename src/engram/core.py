@@ -193,6 +193,45 @@ def init_db(force: bool = False):
 
                 # Mark version 1 applied
                 conn.execute("INSERT OR IGNORE INTO schema_version (version, applied_at) VALUES (1, datetime('now'));")
+
+                # Native sqlite-vec Virtual Table & Triggers (if sqlite-vec is available)
+                has_vec = False
+                try:
+                    import sqlite_vec
+                    conn.enable_load_extension(True)
+                    sqlite_vec.load(conn)
+                    conn.enable_load_extension(False)
+                    has_vec = True
+                except Exception:
+                    pass
+
+                if has_vec:
+                    try:
+                        conn.execute("""
+                        CREATE VIRTUAL TABLE IF NOT EXISTS nodes_vec USING vec0(
+                            id text primary key,
+                            embedding float[384]
+                        );
+                        """)
+                        conn.execute("""
+                        CREATE TRIGGER IF NOT EXISTS nodes_vec_ai AFTER INSERT ON nodes WHEN new.embedding IS NOT NULL BEGIN
+                            INSERT OR REPLACE INTO nodes_vec(id, embedding) VALUES (new.id, new.embedding);
+                        END;
+                        """)
+                        conn.execute("""
+                        CREATE TRIGGER IF NOT EXISTS nodes_vec_au AFTER UPDATE ON nodes WHEN new.embedding IS NOT NULL BEGIN
+                            DELETE FROM nodes_vec WHERE id = old.id;
+                            INSERT OR REPLACE INTO nodes_vec(id, embedding) VALUES (new.id, new.embedding);
+                        END;
+                        """)
+                        conn.execute("""
+                        CREATE TRIGGER IF NOT EXISTS nodes_vec_ad AFTER DELETE ON nodes BEGIN
+                            DELETE FROM nodes_vec WHERE id = old.id;
+                        END;
+                        """)
+                    except Exception:
+                        pass
+
                 conn.commit()
             except sqlite3.Error as e:
                 conn.rollback()

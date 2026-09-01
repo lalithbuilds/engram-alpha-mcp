@@ -162,32 +162,62 @@ def search_memory(
         """
         fts_rows = conn.execute(sql_fts, params).fetchall()
 
-        # 2. Dense Semantic Vector Retrieval (Universal Multi-Tier Hardware Vector Engine)
+        # 2. Dense Semantic Vector Retrieval (Universal Multi-Tier Hardware Vector Engine / sqlite-vec)
         query_vec = generate_dense_embedding(query)
         all_candidate_rows = list(fts_rows)
         seen_ids = set(r[0] for r in fts_rows)
 
         if hybrid:
-            extra_filter = "WHERE embedding IS NOT NULL"
-            extra_params = []
-            if project:
-                extra_filter += " AND project = ?"
-                extra_params.append(project)
+            has_vec_table = False
+            try:
+                cur = conn.execute("SELECT name FROM sqlite_master WHERE type='table' AND name='nodes_vec';")
+                has_vec_table = cur.fetchone() is not None
+            except Exception:
+                has_vec_table = False
 
-            # Cap vector candidate retrieval to 5,000 nodes to preserve sub-second latency on large tables
-            extra_rows = conn.execute(
-                f"""
-                SELECT id, content, created_at, last_accessed_at, embedding, 0.0 as rank, importance, project
-                FROM nodes
-                {extra_filter}
-                LIMIT 5000
-                """,
-                extra_params,
-            ).fetchall()
-            for r in extra_rows:
-                if r[0] not in seen_ids:
-                    all_candidate_rows.append(r)
-                    seen_ids.add(r[0])
+            if has_vec_table:
+                try:
+                    import sqlite_vec
+                    query_blob = sqlite_vec.serialize_float32(query_vec)
+                    project_filter = "AND n.project = ?" if project else ""
+                    params = [query_blob, limit_clamped * 8] + ([project] if project else [])
+                    vec_rows = conn.execute(
+                        f"""
+                        SELECT n.id, n.content, n.created_at, n.last_accessed_at, n.embedding, 0.0 as rank, n.importance, n.project
+                        FROM nodes_vec v
+                        JOIN nodes n ON v.id = n.id
+                        WHERE v.embedding MATCH ? AND k = ? {project_filter}
+                        ORDER BY v.distance ASC
+                        """,
+                        params,
+                    ).fetchall()
+                    for r in vec_rows:
+                        if r[0] not in seen_ids:
+                            all_candidate_rows.append(r)
+                            seen_ids.add(r[0])
+                except Exception:
+                    has_vec_table = False
+
+            if not has_vec_table:
+                extra_filter = "WHERE embedding IS NOT NULL"
+                extra_params = []
+                if project:
+                    extra_filter += " AND project = ?"
+                    extra_params.append(project)
+
+                extra_rows = conn.execute(
+                    f"""
+                    SELECT id, content, created_at, last_accessed_at, embedding, 0.0 as rank, importance, project
+                    FROM nodes
+                    {extra_filter}
+                    LIMIT 5000
+                    """,
+                    extra_params,
+                ).fetchall()
+                for r in extra_rows:
+                    if r[0] not in seen_ids:
+                        all_candidate_rows.append(r)
+                        seen_ids.add(r[0])
 
         if not all_candidate_rows:
             return "No relevant memories found."
@@ -288,7 +318,7 @@ def search_memory(
             fused_scores.append((final_score, node_id, content, node_proj, amx_scores[idx]))
 
         fused_scores.sort(key=lambda x: x[0], reverse=True)
-        top_results = fused_scores[:limit]
+        top_results = fused_scores[:limit_clamped]
 
         # Update access stats
         if top_results:
@@ -317,8 +347,8 @@ def extract_and_save_memory(
 ) -> str:
     """
     Autonomous Memory Extractor Agent:
-    Deconstructs text into atomic facts, extracts entity triples for the knowledge graph,
-    and indexes 384d semantic vectors.
+    Deconstructs text into atomic facts, extracts entity triples for the knowledge graph
+    using hybrid local LLM sidecar + expanded NLP regex heuristics, and indexes vectors.
     """
     node_id, warnings = _save_node(
         "fact", text, importance=importance, category=category, project=project, agent=agent
@@ -329,6 +359,8 @@ def extract_and_save_memory(
     created_edges = []
     try:
         now = datetime.now(timezone.utc).isoformat()
+        
+        # 1. Wikilinks [[slug]] and Hashtags #tag
         wikilinks = re.findall(r"\[\[([^\]\|]+)(?:\|[^\]]+)?\]\]", text)
         for link in wikilinks:
             conn.execute(
@@ -340,12 +372,27 @@ def extract_and_save_memory(
             )
             created_edges.append(f"[{node_id}] -[references]-> [{link.strip()}]")
 
-        # Expanded Natural Language Triple & Entity Relation Extraction
+        hashtags = re.findall(r"(?:^|\s)#([a-zA-Z0-9_\-\/]+)", text)
+        for tag in hashtags:
+            conn.execute(
+                """
+                INSERT OR IGNORE INTO edges (source, target, relation, weight, created_at, project)
+                VALUES (?, ?, ?, 1.0, ?, ?)
+                """,
+                (node_id, tag.strip(), "tagged_as", 1.0, now, project),
+            )
+            created_edges.append(f"[{node_id}] -[tagged_as]-> [{tag.strip()}]")
+
+        # 2. Expanded Multi-Clause Heuristic Regex Triple Extraction
         patterns = [
-            # Standard Entity Verb Entity: Postgres uses WAL / React implements Flux
-            r"(\b[a-zA-Z0-9_\-\.]{2,30}\b)\s+(uses|using|requires|prefer|prefers|connects_to|replaces|implements|is_a|depends_on|runs_on)\s+(\b[a-zA-Z0-9_\-\.]{2,30}\b)",
-            # Conversational: We use Postgres / System runs on Linux / I prefer pnpm
-            r"(?:We|we|System|system|I|Our stack|our stack)\s+(use|uses|using|prefer|prefers|run|runs|deploy|deploys|switched to|replaces|depends on)\s+([a-zA-Z0-9_\-\.]{2,30})",
+            # Entity Verb Entity (Active): Postgres uses WAL / Redis handles cache / Vite compiles TypeScript
+            r"(\b[a-zA-Z0-9_\-\.]{2,30}\b)\s+(uses|using|requires|prefer|prefers|connects_to|replaces|implements|is_a|depends_on|runs_on|stores|caches|compiles|serves)\s+(\b[a-zA-Z0-9_\-\.]{2,30}\b)",
+            # Passive / State: X is powered by Y / X is maintained by Y / X is written in Y / X was replaced by Y
+            r"(\b[a-zA-Z0-9_\-\.]{2,30}\b)\s+(?:is|was|are|were)\s+(powered by|maintained by|written in|replaced by|built on|configured with)\s+(\b[a-zA-Z0-9_\-\.]{2,30}\b)",
+            # Conversational First-Person / Team: We use Postgres / I prefer pnpm over npm / System runs on Linux
+            r"(?:We|we|System|system|I|Our stack|our stack|Our team)\s+(use|uses|using|prefer|prefers|run|runs|deploy|deploys|switched to|replaces|depends on)\s+([a-zA-Z0-9_\-\.]{2,30})",
+            # Comparative Preference: Always use X instead of Y / Prefer X over Y
+            r"(?:Prefer|prefer|Always use|always use|Choose|choose)\s+([a-zA-Z0-9_\-\.]{2,30})\s+(?:over|instead of|rather than)\s+([a-zA-Z0-9_\-\.]{2,30})",
         ]
         
         for pat in patterns:
@@ -354,12 +401,16 @@ def extract_and_save_memory(
                 if len(groups) == 3:
                     s, r, o = groups
                 elif len(groups) == 2:
-                    s, r, o = "Architecture", groups[0].lower().replace(" ", "_"), groups[1]
+                    if "prefer" in pat.lower() or "instead" in pat.lower():
+                        s, r, o = groups[0], "preferred_over", groups[1]
+                    else:
+                        s, r, o = "Architecture", groups[0].lower().replace(" ", "_"), groups[1]
                 else:
                     continue
                 
                 s_clean, r_clean, o_clean = s.strip(), r.strip().lower().replace(" ", "_"), o.strip()
-                if s_clean.lower() not in ("we", "the", "a", "an") and o_clean.lower() not in ("a", "an", "the", "it", "to", "for"):
+                stop_words = ("we", "the", "a", "an", "it", "to", "for", "in", "of", "and", "or")
+                if s_clean.lower() not in stop_words and o_clean.lower() not in stop_words:
                     conn.execute(
                         """
                         INSERT OR IGNORE INTO edges (source, target, relation, weight, created_at, project)
