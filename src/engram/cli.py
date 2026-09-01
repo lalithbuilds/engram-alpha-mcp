@@ -156,6 +156,11 @@ def main():
     p_bench = subparsers.add_parser("benchmark", help="Run hardware coprocessor benchmark")
     p_bench.add_argument("--vectors", type=int, default=10000, help="Number of test vectors")
 
+    # Serve (HTTP & OpenAPI Gateway for Web Agents)
+    p_serve = subparsers.add_parser("serve", help="Start HTTP & OpenAPI Gateway for Web Agents (ChatGPT, Claude, Gemini)")
+    p_serve.add_argument("--host", default="0.0.0.0", help="Host address")
+    p_serve.add_argument("--port", type=int, default=8000, help="Port number")
+
     # Setup
     subparsers.add_parser("setup", help="Auto-configure Claude Desktop")
 
@@ -197,6 +202,9 @@ def main():
         print(get_stats())
     elif args.command == "benchmark":
         run_hardware_benchmark(num_vectors=args.vectors)
+    elif args.command == "serve":
+        from .http_bridge import start_http_gateway
+        start_http_gateway(host=args.host, port=args.port)
     elif args.command == "setup":
         setup_claude_desktop()
 
