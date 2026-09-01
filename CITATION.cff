@@ -1,0 +1,19 @@
+cff-version: 1.2.0
+message: "If you use Engram Alpha MCP in your research or software, please cite it as below."
+authors:
+  - given-names: "Lalith"
+    affiliation: "Ray Global Model"
+    city: "BTM Bengaluru"
+    country: "IN"
+title: "Engram Alpha MCP: Sovereign Agentic Memory & Context Orchestration"
+version: 1.0.0
+date-released: 2026-09-01
+url: "https://github.com/lalith/engram-alpha-mcp"
+abstract: "Engram Alpha MCP is a sovereign, local-first Model Context Protocol (MCP) server providing high-performance episodic memory, full-text search injection defense, and hardware-accelerated context orchestration for autonomous AI agents."
+keywords:
+  - "model-context-protocol"
+  - "mcp"
+  - "agentic-memory"
+  - "sovereign-ai"
+  - "ray-global-model"
+license: "MIT"
