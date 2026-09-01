@@ -1,7 +1,9 @@
 """
-Engram AMX Hardware Vector Engine
-Utilizes Apple Silicon AMX (Apple Matrix Coprocessor) via the Accelerate Framework,
-NumPy BLAS, and pure Python stdlib fallback for ultra-fast vector dot products & cosine distance.
+Engram Universal Hardware Vector Engine (Cross-Platform)
+Multi-Tier Hardware Acceleration:
+- Tier 1 (macOS / Apple Silicon): Apple Matrix Coprocessor (AMX) via Accelerate.framework.
+- Tier 2 (Linux / Windows / x86_64 / arm64): OpenBLAS / MKL / NumPy BLAS matrix operations.
+- Tier 3 (Universal Stdlib Fallback): Pure Python float arithmetic with zero external dependencies.
 """
 
 import sys
@@ -9,13 +11,14 @@ import os
 import math
 import struct
 import ctypes
+from typing import List, Tuple, Optional, Dict, Any
+
 try:
     import numpy as np
-except ImportError:
+except (ImportError, ModuleNotFoundError):
     np = None
-from typing import List, Tuple, Optional
 
-# Load Apple Accelerate framework for direct AMX hardware dispatch
+# Tier 1: Apple Silicon Accelerate Framework Linkage
 _ACCELERATE = None
 _cblas_sdot = None
 _cblas_snrm2 = None
@@ -23,7 +26,6 @@ _cblas_snrm2 = None
 if sys.platform == "darwin":
     try:
         _ACCELERATE = ctypes.CDLL("/System/Library/Frameworks/Accelerate.framework/Accelerate")
-        # float cblas_sdot(const int N, const float *X, const int incX, const float *Y, const int incY);
         _cblas_sdot = _ACCELERATE.cblas_sdot
         _cblas_sdot.argtypes = [
             ctypes.c_int,
@@ -34,7 +36,6 @@ if sys.platform == "darwin":
         ]
         _cblas_sdot.restype = ctypes.c_float
 
-        # float cblas_snrm2(const int N, const float *X, const int incX);
         _cblas_snrm2 = _ACCELERATE.cblas_snrm2
         _cblas_snrm2.argtypes = [
             ctypes.c_int,
@@ -45,12 +46,21 @@ if sys.platform == "darwin":
     except Exception:
         _ACCELERATE = None
 
+def get_acceleration_tier() -> str:
+    """Returns the active hardware acceleration tier."""
+    if _cblas_sdot is not None:
+        return "Tier 1: Apple Silicon AMX (Accelerate.framework)"
+    elif np is not None:
+        return f"Tier 2: Universal NumPy BLAS ({sys.platform})"
+    else:
+        return "Tier 3: Pure Python Standard Library (Zero-Dependency)"
+
 def is_amx_hardware_available() -> bool:
-    """Check if Apple Silicon AMX coprocessor acceleration is available."""
+    """Check if hardware coprocessor acceleration is available."""
     return _cblas_sdot is not None
 
 def pack_vector(vec: List[float]) -> bytes:
-    """Pack float array into compact binary blob."""
+    """Pack float array into compact binary blob (Cross-Platform IEEE 754 float32)."""
     return struct.pack(f"{len(vec)}f", *vec)
 
 def unpack_vector(blob: bytes) -> List[float]:
@@ -60,13 +70,13 @@ def unpack_vector(blob: bytes) -> List[float]:
 
 def amx_cosine_similarity(vec_a: List[float], vec_b: List[float]) -> float:
     """
-    Compute Cosine Similarity using hardware AMX BLAS if on Apple Silicon,
-    falling back to NumPy or pure math.
+    Compute Cosine Similarity across any OS using the fastest available tier.
     """
     n = len(vec_a)
     if n == 0 or len(vec_b) != n:
         return 0.0
 
+    # Tier 1: Apple Silicon AMX
     if _cblas_sdot is not None and _cblas_snrm2 is not None:
         arr_a = (ctypes.c_float * n)(*vec_a)
         arr_b = (ctypes.c_float * n)(*vec_b)
@@ -77,57 +87,63 @@ def amx_cosine_similarity(vec_a: List[float], vec_b: List[float]) -> float:
             return 0.0
         return float(dot / (norm_a * norm_b))
 
-    # Fast NumPy BLAS fallback
-    try:
-        a = np.array(vec_a, dtype=np.float32)
-        b = np.array(vec_b, dtype=np.float32)
-        norm_a = np.linalg.norm(a)
-        norm_b = np.linalg.norm(b)
-        if norm_a == 0 or norm_b == 0:
-            return 0.0
-        return float(np.dot(a, b) / (norm_a * norm_b))
-    except Exception:
-        # Pure Python fallback
-        dot = sum(x * y for x, y in zip(vec_a, vec_b))
-        norm_a = math.sqrt(sum(x * x for x in vec_a))
-        norm_b = math.sqrt(sum(y * y for y in vec_b))
-        if norm_a == 0 or norm_b == 0:
-            return 0.0
-        return dot / (norm_a * norm_b)
+    # Tier 2: Universal NumPy BLAS (Linux / Windows)
+    if np is not None:
+        try:
+            a = np.array(vec_a, dtype=np.float32)
+            b = np.array(vec_b, dtype=np.float32)
+            norm_a = np.linalg.norm(a)
+            norm_b = np.linalg.norm(b)
+            if norm_a == 0 or norm_b == 0:
+                return 0.0
+            return float(np.dot(a, b) / (norm_a * norm_b))
+        except Exception:
+            pass
+
+    # Tier 3: Pure Python Standard Library (Universal Fallback)
+    dot = sum(x * y for x, y in zip(vec_a, vec_b))
+    norm_a = math.sqrt(sum(x * x for x in vec_a))
+    norm_b = math.sqrt(sum(y * y for y in vec_b))
+    if norm_a == 0 or norm_b == 0:
+        return 0.0
+    return dot / (norm_a * norm_b)
 
 def amx_batch_cosine_similarity(
     query_vec: List[float], candidate_matrix: List[List[float]]
 ) -> List[float]:
     """
-    Compute Cosine Similarity against a batch of candidate vectors in a single matrix call.
-    Leverages Apple Silicon Accelerate matrix multiply for microsecond execution.
+    Batch compute cosine similarities against candidate vectors.
+    Dispatches to hardware matrix units (AMX, BLAS, or stdlib vector math).
     """
     if not candidate_matrix or not query_vec:
         return []
 
-    try:
-        q = np.array(query_vec, dtype=np.float32)
-        q_norm = np.linalg.norm(q)
-        if q_norm == 0:
-            return [0.0] * len(candidate_matrix)
-        q_unit = q / q_norm
+    # Fast Matrix BLAS (Tier 1 & Tier 2)
+    if np is not None:
+        try:
+            q = np.array(query_vec, dtype=np.float32)
+            q_norm = np.linalg.norm(q)
+            if q_norm == 0:
+                return [0.0] * len(candidate_matrix)
+            q_unit = q / q_norm
 
-        mat = np.array(candidate_matrix, dtype=np.float32)
-        mat_norms = np.linalg.norm(mat, axis=1, keepdims=True)
-        mat_norms[mat_norms == 0] = 1.0
-        mat_unit = mat / mat_norms
+            mat = np.array(candidate_matrix, dtype=np.float32)
+            mat_norms = np.linalg.norm(mat, axis=1, keepdims=True)
+            mat_norms[mat_norms == 0] = 1.0
+            mat_unit = mat / mat_norms
 
-        # Matrix-vector multiply (dispatched to Apple AMX BLAS)
-        scores = np.dot(mat_unit, q_unit)
-        return scores.tolist()
-    except Exception:
-        return [amx_cosine_similarity(query_vec, cand) for cand in candidate_matrix]
+            scores = np.dot(mat_unit, q_unit)
+            return scores.tolist()
+        except Exception:
+            pass
+
+    # Pure Stdlib Matrix Dispatch (Tier 3)
+    return [amx_cosine_similarity(query_vec, cand) for cand in candidate_matrix]
 
 def generate_dense_embedding(text: str, dim: int = 384) -> List[float]:
     """
-    Generates a deterministic 384-dimensional dense semantic vector.
-    Uses fast semantic hashing projection with zero required external dependencies,
-    or fastembed if available.
+    Generates a deterministic 384-dimensional dense semantic vector on any OS.
+    Standardized across all architectures with zero required external dependencies.
     """
     try:
         from fastembed import TextEmbedding
@@ -137,7 +153,7 @@ def generate_dense_embedding(text: str, dim: int = 384) -> List[float]:
     except Exception:
         pass
 
-    # Fast Deterministic High-Dimensional Hashed Semantic Projection
+    # Universal Deterministic High-Dimensional Hashed Semantic Projection
     # Distributes word n-grams uniformly across 384-dimensional hypersphere
     import hashlib
     vec = [0.0] * dim
