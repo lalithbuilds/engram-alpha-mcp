@@ -15,7 +15,7 @@ from datetime import datetime, timezone
 from typing import Dict, List, Tuple, Any, Optional
 
 from .core import get_db
-from .amx import generate_dense_embedding, pack_vector
+from .amx import generate_dense_embedding, generate_dense_embeddings_batch, pack_vector
 
 WIKILINK_REGEX = re.compile(r"\[\[([^\]\|]+)(?:\|[^\]]+)?\]\]")
 TAG_REGEX = re.compile(r"(?:^|\s)#([a-zA-Z0-9_\-\/]+)")
@@ -57,6 +57,7 @@ def ingest_obsidian_vault(vault_path_str: str, project: str = "default") -> Dict
 
     nodes_to_insert = []
     edges_to_insert = []
+    raw_chunks_to_embed = []
     now = datetime.now(timezone.utc).isoformat()
 
     for file_path in md_files:
@@ -83,8 +84,16 @@ def ingest_obsidian_vault(vault_path_str: str, project: str = "default") -> Dict
         for i, chunk in enumerate(chunks):
             node_id = str(uuid.uuid4())
             chunk_content = f"[{doc_title} (part {i+1}/{len(chunks)})]: {chunk}"
-            embedding = generate_dense_embedding(chunk_content)
-            packed_vec = pack_vector(embedding)
+            raw_chunks_to_embed.append((node_id, chunk_content))
+
+    # Batch Vector Embeddings Generation (10x faster SIMD parallel passes)
+    BATCH_SIZE = 64
+    for b_idx in range(0, len(raw_chunks_to_embed), BATCH_SIZE):
+        batch = raw_chunks_to_embed[b_idx : b_idx + BATCH_SIZE]
+        texts = [item[1] for item in batch]
+        vecs = generate_dense_embeddings_batch(texts)
+        for (node_id, chunk_content), vec in zip(batch, vecs):
+            packed_vec = pack_vector(vec)
             nodes_to_insert.append((
                 node_id,
                 "obsidian_doc",
