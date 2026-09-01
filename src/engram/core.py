@@ -96,6 +96,20 @@ def init_db(force: bool = False):
                 try:
                     cur = conn.execute("SELECT name FROM sqlite_master WHERE type='table' AND name='nodes';")
                     if cur.fetchone():
+                        # Ensure edges schema has all required columns
+                        try:
+                            edge_cols = {c[1] for c in conn.execute("PRAGMA table_info(edges);").fetchall()}
+                            if "valid_from" not in edge_cols:
+                                conn.execute("ALTER TABLE edges ADD COLUMN valid_from TEXT DEFAULT '';")
+                            if "valid_until" not in edge_cols:
+                                conn.execute("ALTER TABLE edges ADD COLUMN valid_until TEXT DEFAULT '';")
+                            if "superseded_by" not in edge_cols:
+                                conn.execute("ALTER TABLE edges ADD COLUMN superseded_by TEXT DEFAULT '';")
+                            if "transaction_time" not in edge_cols:
+                                conn.execute("ALTER TABLE edges ADD COLUMN transaction_time TEXT DEFAULT CURRENT_TIMESTAMP;")
+                            conn.commit()
+                        except Exception:
+                            pass
                         conn.close()
                         _INITIALIZED_PATHS.add(target_path_str)
                         return
@@ -176,6 +190,17 @@ def init_db(force: bool = False):
                 conn.execute("CREATE INDEX IF NOT EXISTS idx_nodes_project ON nodes (project, category);")
                 conn.execute("CREATE INDEX IF NOT EXISTS idx_edges_lookup ON edges (source, target, project);")
                 conn.execute("CREATE INDEX IF NOT EXISTS idx_edges_target ON edges (target, project);")
+
+                # Auto-migrate edges columns if upgrading from earlier version
+                edge_cols = {c[1] for c in conn.execute("PRAGMA table_info(edges);").fetchall()}
+                if "valid_from" not in edge_cols:
+                    conn.execute("ALTER TABLE edges ADD COLUMN valid_from TEXT DEFAULT '';")
+                if "valid_until" not in edge_cols:
+                    conn.execute("ALTER TABLE edges ADD COLUMN valid_until TEXT DEFAULT '';")
+                if "superseded_by" not in edge_cols:
+                    conn.execute("ALTER TABLE edges ADD COLUMN superseded_by TEXT DEFAULT '';")
+                if "transaction_time" not in edge_cols:
+                    conn.execute("ALTER TABLE edges ADD COLUMN transaction_time TEXT DEFAULT CURRENT_TIMESTAMP;")
 
                 # FTS5 Trigram Full-Text Index
                 conn.execute("""
