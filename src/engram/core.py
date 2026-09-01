@@ -276,21 +276,57 @@ def init_db(force: bool = False):
             if has_umask and old_umask is not None:
                 os.umask(old_umask)
 
-def get_db():
-    """
-    Returns an active SQLite database connection with custom functions and WAL pragmas.
-    Uses _INITIALIZED_PATHS fast-path to eliminate redundant DDL checks.
-    """
-    target_path = Path(os.environ.get("ENGRAM_DB_PATH", DB_PATH)).resolve()
-    target_path_str = str(target_path)
-    if target_path_str not in _INITIALIZED_PATHS or not target_path.exists():
-        init_db()
+_THREAD_LOCAL = threading.local()
 
-    conn = sqlite3.connect(target_path_str, timeout=30.0)
-    
+class PooledConnection:
+    """
+    Thread-Local SQLite Connection Proxy:
+    Eliminates connection negotiation overhead and lock contention under heavy multi-threaded concurrency.
+    Preserves connection handles warm per-thread while providing safe rollback on close().
+    """
+    __slots__ = ("_raw_conn", "_path_str")
+
+    def __init__(self, raw_conn, path_str: str):
+        object.__setattr__(self, "_raw_conn", raw_conn)
+        object.__setattr__(self, "_path_str", path_str)
+
+    def close(self):
+        """Safe connection release: rolls back any uncommitted transaction, preserving handle for thread."""
+        try:
+            if getattr(self._raw_conn, "in_transaction", False):
+                self._raw_conn.rollback()
+        except Exception:
+            pass
+
+    def close_raw(self):
+        """Force-closes underlying raw SQLite connection."""
+        try:
+            self._raw_conn.close()
+        except Exception:
+            pass
+
+    def __enter__(self):
+        return self._raw_conn.__enter__()
+
+    def __exit__(self, exc_type, exc_val, exc_tb):
+        return self._raw_conn.__exit__(exc_type, exc_val, exc_tb)
+
+    def __getattr__(self, name):
+        return getattr(self._raw_conn, name)
+
+    def __setattr__(self, name, value):
+        if name in self.__slots__:
+            object.__setattr__(self, name, value)
+        else:
+            setattr(self._raw_conn, name, value)
+
+def _configure_connection(conn):
+    """Applies high-throughput WAL pragmas, custom math functions, and vector extensions."""
     conn.execute("PRAGMA journal_mode = WAL;")
     conn.execute("PRAGMA synchronous = NORMAL;")
     conn.execute("PRAGMA busy_timeout = 30000;")
+    conn.execute("PRAGMA cache_size = -64000;")
+    conn.execute("PRAGMA mmap_size = 268435456;")
     
     def safe_power(base, exp):
         try:
@@ -308,7 +344,41 @@ def get_db():
     except (ImportError, Exception):
         pass
 
-    return conn
+def get_db(force_new: bool = False):
+    """
+    Returns an active SQLite database connection with custom functions and WAL pragmas.
+    Uses thread-local connection pooling to eliminate connection churn under high concurrency.
+    """
+    target_path = Path(os.environ.get("ENGRAM_DB_PATH", DB_PATH)).resolve()
+    target_path_str = str(target_path)
+    if target_path_str not in _INITIALIZED_PATHS or not target_path.exists():
+        init_db()
+
+    if force_new:
+        conn = sqlite3.connect(target_path_str, timeout=30.0)
+        _configure_connection(conn)
+        return conn
+
+    if not hasattr(_THREAD_LOCAL, "conns"):
+        _THREAD_LOCAL.conns = {}
+
+    raw_conn = _THREAD_LOCAL.conns.get(target_path_str)
+    if raw_conn is None:
+        raw_conn = sqlite3.connect(target_path_str, timeout=30.0)
+        _configure_connection(raw_conn)
+        _THREAD_LOCAL.conns[target_path_str] = raw_conn
+
+    return PooledConnection(raw_conn, target_path_str)
+
+def close_thread_connections():
+    """Closes all cached connections on the current thread."""
+    if hasattr(_THREAD_LOCAL, "conns"):
+        for path_str, conn in list(_THREAD_LOCAL.conns.items()):
+            try:
+                conn.close()
+            except Exception:
+                pass
+        _THREAD_LOCAL.conns.clear()
 
 def optimize_and_checkpoint(conn=None) -> Dict[str, Any]:
     """Execute WAL checkpoint, vacuum, and index optimization."""
