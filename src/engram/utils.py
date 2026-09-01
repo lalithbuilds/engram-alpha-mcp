@@ -113,6 +113,7 @@ def retry_db_lock(max_retries=7):
     def decorator(func):
         @functools.wraps(func)
         def wrapper(*args, **kwargs):
+            import random
             delay = 0.1
             for attempt in range(1, max_retries + 1):
                 try:
@@ -121,7 +122,8 @@ def retry_db_lock(max_retries=7):
                     if "database is locked" in str(e).lower():
                         if attempt == max_retries:
                             raise e
-                        time.sleep(delay)
+                        # Add jitter to avoid thundering herd on db lock
+                        time.sleep(delay + random.uniform(0, 0.1))
                         delay = min(delay * 2, 5.0)
                     else:
                         raise e

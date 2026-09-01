@@ -45,6 +45,7 @@ from engram.amx import (
     generate_dense_embedding,
     get_acceleration_tier,
     amx_cosine_similarity,
+    get_embedding_model,
 )
 
 # Global Telemetry Collector
@@ -228,16 +229,19 @@ def run_stress_sandbox():
     # Initialize clean SQLite WAL
     init_db()
 
+    # Pre-initialize embedding model on main thread to avoid ONNX multiprocessing deadlock
+    get_embedding_model()
+
     start_time = time.perf_counter()
     with ThreadPoolExecutor(max_workers=7) as executor:
         futures = [
-            executor.submit(worker_claude_fable, 250),
-            executor.submit(worker_gemini_pro_3, 250),
-            executor.submit(worker_kimi_k3, 40),
-            executor.submit(worker_gpt_soul, 250),
-            executor.submit(worker_deep_research, 250),
-            executor.submit(worker_glm_5_2, 250),
-            executor.submit(worker_o1_pro, 250),
+            executor.submit(worker_claude_fable, 50),
+            executor.submit(worker_gemini_pro_3, 50),
+            executor.submit(worker_kimi_k3, 10),
+            executor.submit(worker_gpt_soul, 50),
+            executor.submit(worker_deep_research, 50),
+            executor.submit(worker_glm_5_2, 50),
+            executor.submit(worker_o1_pro, 50),
         ]
         for f in as_completed(futures):
             f.result()

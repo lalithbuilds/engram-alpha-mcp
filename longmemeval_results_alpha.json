@@ -1,5 +1,5 @@
 {
-  "timestamp": "2026-09-01T10:52:03.829945",
+  "timestamp": "2026-09-01T13:06:25.142073",
   "total": 10,
   "items": [
     {
@@ -70,6 +70,6 @@
     "correct_answers": 10,
     "recall_at_5": 1.0,
     "accuracy": 1.0,
-    "elapsed_seconds": 0.176
+    "elapsed_seconds": 11.71
   }
 }

@@ -217,7 +217,7 @@ def get_embedding_model():
             if _EMBEDDING_MODEL is None and not _FASTEMBED_PROBED:
                 try:
                     from fastembed import TextEmbedding
-                    _EMBEDDING_MODEL = TextEmbedding(model_name="BAAI/bge-small-en-v1.5")
+                    _EMBEDDING_MODEL = TextEmbedding(model_name="BAAI/bge-small-en-v1.5", threads=4)
                 except Exception:
                     _EMBEDDING_MODEL = None
                 finally:
@@ -233,7 +233,8 @@ def generate_dense_embedding(text: str, dim: int = EMBEDDING_DIM) -> List[float]
     model = get_embedding_model()
     if model is not None:
         try:
-            embeddings = list(model.embed([text]))
+            gen = model.embed([text])
+            embeddings = list(gen)
             return [float(x) for x in embeddings[0]]
         except Exception:
             pass
@@ -275,7 +276,9 @@ def generate_dense_embeddings_batch(texts: List[str], dim: int = EMBEDDING_DIM) 
     model = get_embedding_model()
     if model is not None:
         try:
-            return [[float(x) for x in emb] for emb in model.embed(texts)]
+            gen = model.embed(texts)
+            embeddings = list(gen)
+            return [[float(x) for x in emb] for emb in embeddings]
         except Exception:
             pass
     return [generate_dense_embedding(t, dim=dim) for t in texts]
