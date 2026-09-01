@@ -217,7 +217,7 @@ def get_embedding_model():
             if _EMBEDDING_MODEL is None and not _FASTEMBED_PROBED:
                 try:
                     from fastembed import TextEmbedding
-                    _EMBEDDING_MODEL = TextEmbedding(model_name="BAAI/bge-small-en-v1.5")
+                    _EMBEDDING_MODEL = TextEmbedding(model_name="BAAI/bge-small-en-v1.5", threads=1)
                 except Exception:
                     _EMBEDDING_MODEL = None
                 finally:
