@@ -1,9 +1,9 @@
 """
-Engram Universal Hardware Vector Engine (Cross-Platform)
+Engram Universal Hardware Vector Engine (Cross-Platform "One for All")
 Multi-Tier Hardware Acceleration:
 - Tier 1 (macOS / Apple Silicon): Apple Matrix Coprocessor (AMX) via Accelerate.framework.
-- Tier 2 (Linux / Windows / x86_64 / arm64): OpenBLAS / MKL / NumPy BLAS matrix operations.
-- Tier 3 (Universal Stdlib Fallback): Pure Python float arithmetic with zero external dependencies.
+- Tier 2 (Linux / Windows / x86_64 / arm64): Native C-BLAS (libopenblas, openblas.dll, mkl) or NumPy BLAS.
+- Tier 3 (Universal Stdlib Fallback): Pure Python IEEE 754 float arithmetic with zero external dependencies.
 """
 
 import sys
@@ -11,6 +11,7 @@ import os
 import math
 import struct
 import ctypes
+import ctypes.util
 from typing import List, Tuple, Optional, Dict, Any
 
 try:
@@ -18,45 +19,83 @@ try:
 except (ImportError, ModuleNotFoundError):
     np = None
 
-# Tier 1: Apple Silicon Accelerate Framework Linkage
-_ACCELERATE = None
+# Hardware C-Library Linkage (macOS Accelerate, Linux OpenBLAS, Windows BLAS)
+_BLAS_LIB = None
 _cblas_sdot = None
 _cblas_snrm2 = None
+_cblas_sgemv = None
 
-if sys.platform == "darwin":
-    try:
-        _ACCELERATE = ctypes.CDLL("/System/Library/Frameworks/Accelerate.framework/Accelerate")
-        _cblas_sdot = _ACCELERATE.cblas_sdot
-        _cblas_sdot.argtypes = [
-            ctypes.c_int,
-            ctypes.POINTER(ctypes.c_float),
-            ctypes.c_int,
-            ctypes.POINTER(ctypes.c_float),
-            ctypes.c_int,
-        ]
-        _cblas_sdot.restype = ctypes.c_float
+def _init_cblas():
+    global _BLAS_LIB, _cblas_sdot, _cblas_snrm2, _cblas_sgemv
+    
+    # 1. macOS Accelerate Framework (Apple Silicon AMX / NEON)
+    if sys.platform == "darwin":
+        try:
+            _BLAS_LIB = ctypes.CDLL("/System/Library/Frameworks/Accelerate.framework/Accelerate")
+        except Exception:
+            _BLAS_LIB = None
 
-        _cblas_snrm2 = _ACCELERATE.cblas_snrm2
-        _cblas_snrm2.argtypes = [
-            ctypes.c_int,
-            ctypes.POINTER(ctypes.c_float),
-            ctypes.c_int,
-        ]
-        _cblas_snrm2.restype = ctypes.c_float
-    except Exception:
-        _ACCELERATE = None
+    # 2. Linux / BSD / Unix C-BLAS Discovery (libopenblas, libblas, libmkl_rt)
+    elif sys.platform.startswith("linux") or "bsd" in sys.platform:
+        candidates = ["libopenblas.so", "libopenblas.so.0", "libblas.so", "libblas.so.3", "libmkl_rt.so"]
+        for cand in candidates:
+            try:
+                path = ctypes.util.find_library(cand) or cand
+                _BLAS_LIB = ctypes.CDLL(path)
+                break
+            except Exception:
+                continue
+
+    # 3. Windows BLAS Discovery (openblas.dll, mkl_rt.dll)
+    elif sys.platform == "win32":
+        candidates = ["openblas.dll", "libopenblas.dll", "mkl_rt.dll", "blas.dll"]
+        for cand in candidates:
+            try:
+                _BLAS_LIB = ctypes.CDLL(cand)
+                break
+            except Exception:
+                continue
+
+    # Bind C-BLAS functions if library was found
+    if _BLAS_LIB is not None:
+        try:
+            _cblas_sdot = _BLAS_LIB.cblas_sdot
+            _cblas_sdot.argtypes = [
+                ctypes.c_int,
+                ctypes.POINTER(ctypes.c_float),
+                ctypes.c_int,
+                ctypes.POINTER(ctypes.c_float),
+                ctypes.c_int,
+            ]
+            _cblas_sdot.restype = ctypes.c_float
+
+            _cblas_snrm2 = _BLAS_LIB.cblas_snrm2
+            _cblas_snrm2.argtypes = [
+                ctypes.c_int,
+                ctypes.POINTER(ctypes.c_float),
+                ctypes.c_int,
+            ]
+            _cblas_snrm2.restype = ctypes.c_float
+        except Exception:
+            _cblas_sdot = None
+            _cblas_snrm2 = None
+
+_init_cblas()
 
 def get_acceleration_tier() -> str:
     """Returns the active hardware acceleration tier."""
     if _cblas_sdot is not None:
-        return "Tier 1: Apple Silicon AMX (Accelerate.framework)"
+        if sys.platform == "darwin":
+            return "Tier 1: Apple Silicon AMX (Accelerate.framework)"
+        else:
+            return f"Tier 1: Native C-BLAS Hardware Acceleration ({sys.platform})"
     elif np is not None:
         return f"Tier 2: Universal NumPy BLAS ({sys.platform})"
     else:
-        return "Tier 3: Pure Python Standard Library (Zero-Dependency)"
+        return "Tier 3: Pure Python Standard Library (Zero-Dependency Universal)"
 
 def is_amx_hardware_available() -> bool:
-    """Check if hardware coprocessor acceleration is available."""
+    """Check if native C-level hardware coprocessor/BLAS acceleration is available."""
     return _cblas_sdot is not None
 
 def pack_vector(vec: List[float]) -> bytes:
@@ -68,26 +107,38 @@ def unpack_vector(blob: bytes) -> List[float]:
     count = len(blob) // 4
     return list(struct.unpack(f"{count}f", blob))
 
+def compute_similarity_pure_python(vec_a: List[float], vec_b: List[float]) -> float:
+    """Tier 3: Pure Python float arithmetic (runs on any OS, micro-controller, or Docker container)."""
+    dot = sum(x * y for x, y in zip(vec_a, vec_b))
+    norm_a = math.sqrt(sum(x * x for x in vec_a))
+    norm_b = math.sqrt(sum(y * y for y in vec_b))
+    if norm_a == 0.0 or norm_b == 0.0:
+        return 0.0
+    return float(dot / (norm_a * norm_b))
+
 def amx_cosine_similarity(vec_a: List[float], vec_b: List[float]) -> float:
     """
-    Compute Cosine Similarity across any OS using the fastest available tier.
+    Compute Cosine Similarity across any OS using the fastest available hardware tier.
     """
     n = len(vec_a)
     if n == 0 or len(vec_b) != n:
         return 0.0
 
-    # Tier 1: Apple Silicon AMX
+    # Tier 1: Direct C-BLAS (Apple AMX, Linux OpenBLAS, Windows MKL)
     if _cblas_sdot is not None and _cblas_snrm2 is not None:
-        arr_a = (ctypes.c_float * n)(*vec_a)
-        arr_b = (ctypes.c_float * n)(*vec_b)
-        dot = _cblas_sdot(n, arr_a, 1, arr_b, 1)
-        norm_a = _cblas_snrm2(n, arr_a, 1)
-        norm_b = _cblas_snrm2(n, arr_b, 1)
-        if norm_a <= 0.0 or norm_b <= 0.0:
-            return 0.0
-        return float(dot / (norm_a * norm_b))
+        try:
+            arr_a = (ctypes.c_float * n)(*vec_a)
+            arr_b = (ctypes.c_float * n)(*vec_b)
+            dot = _cblas_sdot(n, arr_a, 1, arr_b, 1)
+            norm_a = _cblas_snrm2(n, arr_a, 1)
+            norm_b = _cblas_snrm2(n, arr_b, 1)
+            if norm_a <= 0.0 or norm_b <= 0.0:
+                return 0.0
+            return float(dot / (norm_a * norm_b))
+        except Exception:
+            pass
 
-    # Tier 2: Universal NumPy BLAS (Linux / Windows)
+    # Tier 2: Universal NumPy BLAS (Linux / Windows / Docker)
     if np is not None:
         try:
             a = np.array(vec_a, dtype=np.float32)
@@ -100,13 +151,8 @@ def amx_cosine_similarity(vec_a: List[float], vec_b: List[float]) -> float:
         except Exception:
             pass
 
-    # Tier 3: Pure Python Standard Library (Universal Fallback)
-    dot = sum(x * y for x, y in zip(vec_a, vec_b))
-    norm_a = math.sqrt(sum(x * x for x in vec_a))
-    norm_b = math.sqrt(sum(y * y for y in vec_b))
-    if norm_a == 0 or norm_b == 0:
-        return 0.0
-    return dot / (norm_a * norm_b)
+    # Tier 3: Universal Pure Python Stdlib (Zero-Dependency Fallback)
+    return compute_similarity_pure_python(vec_a, vec_b)
 
 def amx_batch_cosine_similarity(
     query_vec: List[float], candidate_matrix: List[List[float]]
@@ -138,7 +184,7 @@ def amx_batch_cosine_similarity(
             pass
 
     # Pure Stdlib Matrix Dispatch (Tier 3)
-    return [amx_cosine_similarity(query_vec, cand) for cand in candidate_matrix]
+    return [compute_similarity_pure_python(query_vec, cand) for cand in candidate_matrix]
 
 def generate_dense_embedding(text: str, dim: int = 384) -> List[float]:
     """
