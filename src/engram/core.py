@@ -214,10 +214,11 @@ def init_db(force: bool = False):
 
                 if has_vec:
                     try:
-                        conn.execute("""
+                        embedding_dim = int(os.environ.get("ENGRAM_EMBEDDING_DIM", "384"))
+                        conn.execute(f"""
                         CREATE VIRTUAL TABLE IF NOT EXISTS nodes_vec USING vec0(
                             id text primary key,
-                            embedding float[384]
+                            embedding float[{embedding_dim}]
                         );
                         """)
                         conn.execute("""

@@ -92,3 +92,49 @@ def test_elimination_of_5001_node_cliff():
 
     res = search_memory("vehicle repair shop assistance", limit=5, hybrid=True, project="cliff_test")
     assert "Automobile engine stalled" in res
+
+def test_graph_cte_parameter_binding_with_project():
+    """
+    Verifies that search_memory with graph spreading activation executes cleanly
+    without SQLite parameter binding count mismatch when project filter is active.
+    """
+    save_graph_relation("Postgres", "stores", "UserProfiles", project="proj_cte_test")
+    save_graph_relation("UserProfiles", "secured_by", "AuthGuard", project="proj_cte_test")
+    save_memory("Postgres database stores UserProfiles securely.", importance=7, project="proj_cte_test")
+
+    # Query with multiple tokens and project filter active
+    res = search_memory("Postgres UserProfiles AuthGuard", limit=5, hybrid=True, project="proj_cte_test")
+    assert "Postgres database" in res
+
+def test_sqlite_vec_configurable_dimension():
+    """
+    Verifies that ENGRAM_EMBEDDING_DIM configures the nodes_vec virtual table float array size.
+    """
+    test_dim_path = "test_dim_512.sqlite"
+    if os.path.exists(test_dim_path):
+        try: os.remove(test_dim_path)
+        except: pass
+
+    old_dim = os.environ.get("ENGRAM_EMBEDDING_DIM")
+    old_db = os.environ.get("ENGRAM_DB_PATH")
+    try:
+        os.environ["ENGRAM_EMBEDDING_DIM"] = "512"
+        os.environ["ENGRAM_DB_PATH"] = test_dim_path
+        init_db(force=True)
+
+        conn = get_db()
+        cur = conn.execute("SELECT sql FROM sqlite_master WHERE type='table' AND name='nodes_vec';")
+        row = cur.fetchone()
+        conn.close()
+
+        if row:
+            assert "512" in row[0]
+    finally:
+        if old_dim: os.environ["ENGRAM_EMBEDDING_DIM"] = old_dim
+        else: os.environ.pop("ENGRAM_EMBEDDING_DIM", None)
+        if old_db: os.environ["ENGRAM_DB_PATH"] = old_db
+        else: os.environ.pop("ENGRAM_DB_PATH", None)
+        for f in [test_dim_path, f"{test_dim_path}-wal", f"{test_dim_path}-shm"]:
+            if os.path.exists(f):
+                try: os.remove(f)
+                except: pass

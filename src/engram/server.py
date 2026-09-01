@@ -270,11 +270,21 @@ def search_memory(
             FROM graph_walk
             GROUP BY entity;
             """
+            cte_params = []
+            # Base case 1: source IN (tokens)
+            cte_params.extend(tokens)
+            if project:
+                cte_params.append(project)
+            # Base case 2: target IN (tokens)
+            cte_params.extend(tokens)
+            if project:
+                cte_params.append(project)
+            # Recursive case: e.project = ?
+            if project:
+                cte_params.append(project)
+
             try:
-                edge_rows = conn.execute(
-                    cte_sql,
-                    tokens + proj_params + tokens + proj_params + (proj_params if project else [])
-                ).fetchall()
+                edge_rows = conn.execute(cte_sql, cte_params).fetchall()
                 for target_node, act in edge_rows:
                     if target_node:
                         graph_bonus[target_node.lower()] = max(graph_bonus.get(target_node.lower(), 0.0), float(act or 1.0))
@@ -545,7 +555,8 @@ def deduplicate_memories(similarity_threshold: float = 0.92, project: Optional[s
             filter_str += " AND project = ?"
             params.append(project)
 
-        rows = conn.execute(f"SELECT id, content, embedding, access_count, importance FROM nodes {filter_str} LIMIT ?", params + [batch_size]).fetchall()
+        batch_clamped = max(10, min(1000, int(batch_size)))
+        rows = conn.execute(f"SELECT id, content, embedding, access_count, importance FROM nodes {filter_str} LIMIT ?", params + [batch_clamped]).fetchall()
         if len(rows) < 2:
             return "Insufficient records to deduplicate."
 

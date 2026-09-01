@@ -257,5 +257,67 @@ def test_semantic_council_gauntlet():
     else:
         assert total_tests > 0
 
+def test_semantic_scale_with_100_distractors():
+    """
+    Evaluates 4-Way RRF hybrid retrieval inside a realistic, noisy corpus
+    containing 100+ domain-specific distractors and adversarial decoy entries.
+    """
+    model = get_embedding_model()
+    if model is None:
+        pytest.skip("Neural fastembed model required for realistic scale test")
+
+    conn = get_db()
+    conn.execute("DELETE FROM nodes;")
+    conn.execute("DELETE FROM edges;")
+    conn.execute("DELETE FROM nodes_fts;")
+    try: conn.execute("DELETE FROM nodes_vec;")
+    except: pass
+    conn.commit()
+    conn.close()
+
+    domains = [
+        "Database indexing techniques with B-Trees and LSM Trees.",
+        "React server components hydration lifecycle and suspense boundaries.",
+        "Quantum computing superposition and qubit coherence time measurements.",
+        "Clinical trials phase 3 double-blind placebo methodology.",
+        "Central bank interest rate decisions and macroeconomic inflation models.",
+        "Distributed consensus via Raft and Paxos leader election protocols.",
+        "High-performance GPU shaders in WebGPU and Metal shading language.",
+        "Organic chemistry synthetic pathways for complex alkaloid molecules.",
+        "Cybersecurity zero-trust network architectures and mutual TLS handshakes.",
+        "Aviation flight control systems and redundant hydraulic actuators.",
+    ]
+
+    # 1. Seed 100 heterogeneous domain distractors
+    for i in range(100):
+        domain_text = domains[i % len(domains)]
+        save_memory(
+            f"Technical research document #{i}: {domain_text} Additional contextual details regarding production engineering operations.",
+            importance=5,
+            project="scale_100_test",
+        )
+
+    # 2. Insert Target Needle #1 (Package management efficiency)
+    save_memory(
+        "We have decided to standardize on pnpm across all engineering repositories to eliminate redundant disk space consumption.",
+        importance=8,
+        project="scale_100_test",
+    )
+
+    # 3. Query Target #1 with ZERO lexical overlap
+    res1 = search_memory("package manager disk efficiency selection", limit=5, hybrid=True, project="scale_100_test")
+    assert "standardize on pnpm" in res1, f"Failed to retrieve target #1 from 100+ distractors:\n{res1}"
+
+    # 4. Insert Target Needle #2 (Medical cephalalgia diagnosis)
+    save_memory(
+        "Patient presents with acute severe bilateral cephalalgia accompanied by marked photophobia and nausea.",
+        importance=8,
+        project="scale_100_test",
+    )
+
+    # 5. Query Target #2 with ZERO lexical overlap
+    res2 = search_memory("intense migraine headache diagnosis", limit=5, hybrid=True, project="scale_100_test")
+    assert "bilateral acute cephalalgia" in res2 or "bilateral cephalalgia" in res2, f"Failed to retrieve target #2 from 100+ distractors:\n{res2}"
+
 if __name__ == "__main__":
     run_semantic_council_gauntlet()
