@@ -47,9 +47,11 @@ def delete_obsidian_file_nodes(doc_title: str, project: str = "default"):
     conn = get_db()
     conn.execute("BEGIN IMMEDIATE;")
     try:
+        # FIX BUG 13/23: escape % and _ in doc_title
+        doc_title_clean = doc_title.replace('\\', r'\\').replace('%', r'\%').replace('_', r'\_')
         conn.execute(
-            "DELETE FROM nodes WHERE category = 'obsidian' AND content LIKE ? AND project = ?",
-            (f"[{doc_title} (part%", project),
+            "DELETE FROM nodes WHERE category = 'obsidian' AND content LIKE ? ESCAPE '\' AND project = ?",
+            (f"[{doc_title_clean} (part%", project),
         )
         conn.execute(
             "DELETE FROM edges WHERE (source = ? OR target = ?) AND project = ?",
@@ -145,6 +147,28 @@ def ingest_obsidian_vault(vault_path_str: str, project: str = "default") -> Dict
     if not md_files:
         return {"status": "empty", "files_processed": 0, "nodes_created": 0, "edges_created": 0}
 
+    # FIX BUG 50: batch deletions upfront in a single transaction, instead of N separate connections
+    conn = get_db()
+    conn.execute("BEGIN IMMEDIATE;")
+    try:
+        for file_path in md_files:
+            doc_title = file_path.stem
+            doc_title_clean = doc_title.replace('\\', r'\\').replace('%', r'\%').replace('_', r'\_')
+            conn.execute(
+                "DELETE FROM nodes WHERE category = 'obsidian' AND content LIKE ? ESCAPE '\' AND project = ?",
+                (f"[{doc_title_clean} (part%", project),
+            )
+            conn.execute(
+                "DELETE FROM edges WHERE (source = ? OR target = ?) AND project = ?",
+                (doc_title, doc_title, project),
+            )
+        conn.commit()
+    except Exception as e:
+        conn.rollback()
+        raise e
+    finally:
+        conn.close()
+
     nodes_to_insert = []
     edges_to_insert = []
     raw_chunks_to_embed = []
@@ -161,7 +185,6 @@ def ingest_obsidian_vault(vault_path_str: str, project: str = "default") -> Dict
             continue
 
         doc_title = file_path.stem
-        delete_obsidian_file_nodes(doc_title, project=project)
         wikilinks, tags = extract_metadata_and_links(content)
 
         for link in wikilinks:

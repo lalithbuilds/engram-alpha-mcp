@@ -70,6 +70,10 @@ def escape_fts(text: str) -> str:
     clean = "".join(ch for ch in clean if ord(ch) >= 32 or ch in ('\n', '\t'))
     return clean.strip()
 
+def _normalize_project(project: Optional[str]) -> Optional[str]:
+    """FIX BUG 42: normalize empty string project to None throughout all tools."""
+    return None if project == "" else project
+
 @retry_db_lock(max_retries=7)
 def _save_node(
     node_type: str,
@@ -82,20 +86,19 @@ def _save_node(
     conn = get_db()
     node_id = str(uuid.uuid4())
     now = datetime.now(timezone.utc).isoformat()
-    
-    # Input validation and clamping
-    content_clamped = str(content)[:100000] # max 100KB
+
+    content_clamped = str(content)[:100000]
     imp_clamped = max(1, min(10, int(importance)))
-    
+
     clean_words = set(w.lower() for w in escape_fts(content_clamped).split() if len(w) > 2)
     warnings = []
-    
+
     dense_vec = generate_dense_embedding(content_clamped)
     packed_vec = pack_vector(dense_vec)
-    
-    conn.execute("BEGIN IMMEDIATE;")
-    try:
-        if len(clean_words) >= 3:
+
+    # FIX BUG 24: duplicate check BEFORE acquiring write lock (BEGIN IMMEDIATE)
+    if len(clean_words) >= 3:
+        try:
             fts_query = " OR ".join(f'"{w}"' for w in list(clean_words)[:8])
             candidate_rows = conn.execute(
                 "SELECT n.id, n.content, n.embedding FROM nodes_fts f JOIN nodes n ON f.id=n.id WHERE nodes_fts MATCH ? LIMIT 10",
@@ -104,18 +107,19 @@ def _save_node(
             for cand_id, cand_content, cand_blob in candidate_rows:
                 cand_words = set(w.lower() for w in escape_fts(cand_content).split() if len(w) > 2)
                 overlap_count = len(clean_words & cand_words)
-                
-                # Check cosine similarity if blob exists
                 is_high_sim = False
                 if cand_blob:
                     cand_vec = unpack_vector(cand_blob)
                     sim = amx_cosine_similarity(dense_vec, cand_vec)
                     if sim >= 0.85:
                         is_high_sim = True
-
                 if is_high_sim or overlap_count >= 4:
                     warnings.append(f"Potential duplicate/conflict (ID {cand_id}): {cand_content[:60]}...")
-                    
+        except Exception:
+            pass
+
+    conn.execute("BEGIN IMMEDIATE;")
+    try:
         conn.execute(
             """
             INSERT INTO nodes (id, type, content, created_at, updated_at, access_count, last_accessed_at, embedding, importance, category, project, agent)
@@ -129,7 +133,7 @@ def _save_node(
         raise e
     finally:
         conn.close()
-        
+
     return node_id, warnings
 
 @mcp.tool()
@@ -162,6 +166,7 @@ def search_memory(
     Search memory using 4-Way Reciprocal Rank Fusion (RRF):
     Fuses Dense Vector Cosine Similarity + Trigram FTS5 Lexical + Graph Spreading Activation + ACT-R Decay.
     """
+    project = _normalize_project(project)  # FIX BUG 42
     limit_clamped = max(1, min(100, int(limit)))
     conn = get_db()
     safe_query = escape_fts(query)
@@ -171,8 +176,8 @@ def search_memory(
 
     try:
         # 1. Lexical Candidate Retrieval via Multi-Word FTS5
+        # FIX BUG D/35: FTS5 trigram requires >=3 char tokens
         words = [w.replace('"', '""') for w in safe_query.split() if len(w) >= 3]
-
         fts_query = " OR ".join(f'"{w}"' for w in words[:8]) if words else f'"{safe_query}"'
         project_filter = "AND n.project = ?" if project else ""
         params = [fts_query] + ([project] if project else []) + [limit_clamped * 4]
@@ -186,7 +191,7 @@ def search_memory(
         """
         fts_rows = conn.execute(sql_fts, params).fetchall()
 
-        # 2. Dense Semantic Vector Retrieval (Universal Multi-Tier Hardware Vector Engine / sqlite-vec)
+        # 2. Dense Semantic Vector Retrieval
         query_vec = generate_dense_embedding(query)
         all_candidate_rows = list(fts_rows)
         seen_ids = set(r[0] for r in fts_rows)
@@ -203,17 +208,18 @@ def search_memory(
                 try:
                     import sqlite_vec
                     query_blob = sqlite_vec.serialize_float32(query_vec)
-                    project_filter = "AND n.project = ?" if project else ""
-                    params = [query_blob, limit_clamped * 8] + ([project] if project else [])
+                    # FIX: use local variable to avoid clobbering outer project_filter
+                    vec_proj_filter = "AND n.project = ?" if project else ""
+                    vec_params = [query_blob, limit_clamped * 8] + ([project] if project else [])
                     vec_rows = conn.execute(
                         f"""
                         SELECT n.id, n.content, n.created_at, n.last_accessed_at, n.embedding, 0.0 as rank, n.importance, n.project
                         FROM nodes_vec v
                         JOIN nodes n ON v.id = n.id
-                        WHERE v.embedding MATCH ? AND k = ? {project_filter}
+                        WHERE v.embedding MATCH ? AND k = ? {vec_proj_filter}
                         ORDER BY v.distance ASC
                         """,
-                        params,
+                        vec_params,
                     ).fetchall()
                     for r in vec_rows:
                         if r[0] not in seen_ids:
@@ -229,7 +235,6 @@ def search_memory(
                     extra_filter += " AND project = ?"
                     extra_params.append(project)
 
-                # Full-namespace evaluation without artificial row limit (eliminates the 5,001-node cliff)
                 extra_rows = conn.execute(
                     f"""
                     SELECT id, content, created_at, last_accessed_at, embedding, 0.0 as rank, importance, project
@@ -267,7 +272,6 @@ def search_memory(
         if tokens:
             placeholders = ",".join("?" for _ in tokens)
             edge_filter = "AND project = ?" if project else ""
-            proj_params = [project] if project else []
 
             cte_sql = f"""
             WITH RECURSIVE graph_walk AS (
@@ -291,15 +295,12 @@ def search_memory(
             GROUP BY entity;
             """
             cte_params = []
-            # Base case 1: source IN (tokens)
             cte_params.extend(tokens)
             if project:
                 cte_params.append(project)
-            # Base case 2: target IN (tokens)
             cte_params.extend(tokens)
             if project:
                 cte_params.append(project)
-            # Recursive case: e.project = ?
             if project:
                 cte_params.append(project)
 
@@ -324,17 +325,18 @@ def search_memory(
 
         for idx, r in enumerate(all_candidate_rows):
             node_id, content, created_at, last_accessed_at, _, rank, importance, node_proj = r
-            
+
             r_dense = dense_rank_map.get(idx, 1000)
             r_lex = lex_rank_map.get(idx, 1000)
-            
-            # Graph activation boost
+
+            # FIX BUG E: word-boundary match prevents substring false-positives
+            # FIX BUG 15: cap g_boost to prevent domination of RRF score
             g_boost = 0.0
             content_lower = content.lower()
             for entity_term, bonus in graph_bonus.items():
                 if re.search(r'\b' + re.escape(entity_term) + r'\b', content_lower):
                     g_boost += bonus * 0.25
-
+            g_boost = min(g_boost, 0.5)
 
             rrf_score = (1.2 / (k_rrf + r_dense)) + (1.0 / (k_rrf + r_lex)) + g_boost
 
@@ -345,7 +347,7 @@ def search_memory(
                 days_old = max(0.0, (now_dt - ref_dt).total_seconds() / 86400.0)
             except Exception:
                 days_old = 0.0
-                
+
             decay_multiplier = math.pow(1.0 + (0.1 * days_old), -0.5)
             importance_weight = 1.0 + (importance - 5) * 0.05
 
@@ -355,16 +357,22 @@ def search_memory(
         fused_scores.sort(key=lambda x: x[0], reverse=True)
         top_results = fused_scores[:limit_clamped]
 
-        # Update access stats
+        # FIX BUG 20: wrap access stats update so exceptions don't escape finally
         if top_results:
-            conn.execute("BEGIN IMMEDIATE;")
-            now_iso = now_dt.isoformat()
-            for _, node_id, _, _, _ in top_results:
-                conn.execute(
-                    "UPDATE nodes SET access_count = access_count + 1, last_accessed_at = ? WHERE id = ?",
-                    (now_iso, node_id),
-                )
-            conn.commit()
+            try:
+                conn.execute("BEGIN IMMEDIATE;")
+                now_iso = now_dt.isoformat()
+                for _, node_id, _, _, _ in top_results:
+                    conn.execute(
+                        "UPDATE nodes SET access_count = access_count + 1, last_accessed_at = ? WHERE id = ?",
+                        (now_iso, node_id),
+                    )
+                conn.commit()
+            except Exception:
+                try:
+                    conn.rollback()
+                except Exception:
+                    pass
 
         res = [f"ID: {r[1]} [Project: {r[3]}]\nContent: {r[2]}" for r in top_results]
         return "\n\n".join(res)
@@ -388,14 +396,15 @@ def extract_and_save_memory(
     node_id, warnings = _save_node(
         "fact", text, importance=importance, category=category, project=project, agent=agent
     )
-    
+
     conn = get_db()
     conn.execute("BEGIN IMMEDIATE;")
     created_edges = []
     try:
         now = datetime.now(timezone.utc).isoformat()
-        
+
         # 1. Wikilinks [[slug]] and Hashtags #tag
+        # FIX BUG 2: store slug as SOURCE so graph spreading activation can match query tokens
         wikilinks = re.findall(r"\[\[([^\]\|]+)(?:\|[^\]]+)?\]\]", text)
         for link in wikilinks:
             conn.execute(
@@ -403,9 +412,9 @@ def extract_and_save_memory(
                 INSERT OR IGNORE INTO edges (source, target, relation, weight, created_at, project)
                 VALUES (?, ?, ?, 1.0, ?, ?)
                 """,
-                (node_id, link.strip(), "references", now, project),
+                (link.strip(), node_id, "is_referenced_by", now, project),
             )
-            created_edges.append(f"[{node_id}] -[references]-> [{link.strip()}]")
+            created_edges.append(f"[{link.strip()}] -[is_referenced_by]-> [{node_id[:8]}]")
 
         hashtags = re.findall(r"(?:^|\s)#([a-zA-Z0-9_\-\/]+)", text)
         for tag in hashtags:
@@ -414,39 +423,39 @@ def extract_and_save_memory(
                 INSERT OR IGNORE INTO edges (source, target, relation, weight, created_at, project)
                 VALUES (?, ?, ?, 1.0, ?, ?)
                 """,
-                (node_id, tag.strip(), "tagged_as", 1.0, now, project),
+                (tag.strip(), node_id, "tagged_as", 1.0, now, project),
             )
-            created_edges.append(f"[{node_id}] -[tagged_as]-> [{tag.strip()}]")
+            created_edges.append(f"[{tag.strip()}] -[tagged_as]-> [{node_id[:8]}]")
 
         # 2. Expanded Multi-Clause Heuristic Regex Triple Extraction
         patterns = [
-            # Entity Verb Entity (Active): Postgres uses WAL / Redis handles cache / Vite compiles TypeScript
+            # Entity Verb Entity (Active): Postgres uses WAL / Redis handles cache
             r"(\b[a-zA-Z0-9_\-\.]{2,30}\b)\s+(uses|using|requires|prefer|prefers|connects_to|replaces|implements|is_a|depends_on|runs_on|stores|caches|compiles|serves)\s+(\b[a-zA-Z0-9_\-\.]{2,30}\b)",
-            # Passive / State: X is powered by Y / X is maintained by Y / X is written in Y / X was replaced by Y
+            # Passive / State: X is powered by Y / X is written in Y
             r"(\b[a-zA-Z0-9_\-\.]{2,30}\b)\s+(?:is|was|are|were)\s+(powered by|maintained by|written in|replaced by|built on|configured with)\s+(\b[a-zA-Z0-9_\-\.]{2,30}\b)",
-            # Conversational First-Person / Team: We use Postgres / I prefer pnpm over npm / System runs on Linux
+            # Conversational: We use Postgres / System runs on Linux  (2 groups: verb, object)
             r"(?:We|we|System|system|I|Our stack|our stack|Our team)\s+(use|uses|using|prefer|prefers|run|runs|deploy|deploys|switched to|replaces|depends on)\s+([a-zA-Z0-9_\-\.]{2,30})",
-            # Comparative Preference: Always use X instead of Y / Prefer X over Y
+            # Comparative: Prefer X over Y  (2 groups: X, Y)
             r"(?:Prefer|prefer|Always use|always use|Choose|choose)\s+([a-zA-Z0-9_\-\.]{2,30})\s+(?:over|instead of|rather than)\s+([a-zA-Z0-9_\-\.]{2,30})",
         ]
-        
+
+        # FIX BUG A: use enumerate+index to distinguish pattern types, not string inspection
         for pat_idx, pat in enumerate(patterns):
             for match in re.finditer(pat, text, re.IGNORECASE):
                 groups = match.groups()
                 if len(groups) == 3:
                     s, r, o = groups
                 elif len(groups) == 2:
-                    # pat_idx 3 = comparative preference: Prefer X over Y -> (X, Y)
-                    if pat_idx == 3:
+                    if pat_idx == 3:  # comparative: (X, Y)
                         s, r, o = groups[0], "preferred_over", groups[1]
-                    else:
-                        # pat_idx 2 = conversational: We/I <verb> <object> -> (verb, object)
+                    else:  # conversational pat_idx==2: (verb, object)
                         s, r, o = "Architecture", groups[0].lower().replace(" ", "_"), groups[1]
                 else:
                     continue
 
-                
-                s_clean, r_clean, o_clean = s.strip(), r.strip().lower().replace(" ", "_"), o.strip()
+                s_clean = s.strip()
+                r_clean = r.strip().lower().replace(" ", "_")
+                o_clean = o.strip()
                 stop_words = ("we", "the", "a", "an", "it", "to", "for", "in", "of", "and", "or")
                 if s_clean.lower() not in stop_words and o_clean.lower() not in stop_words:
                     conn.execute(
@@ -459,7 +468,7 @@ def extract_and_save_memory(
                     created_edges.append(f"[{s_clean}] -[{r_clean}]-> [{o_clean}]")
 
         conn.commit()
-    except Exception as e:
+    except Exception:
         conn.rollback()
     finally:
         conn.close()
@@ -506,10 +515,10 @@ def query_graph(node: str, depth: int = 2, project: Optional[str] = None, includ
     """
     Query knowledge graph relations with recursive multi-hop path traversal and bi-temporal filtering.
     """
+    project = _normalize_project(project)  # FIX BUG 42
     conn = get_db()
     try:
         node_clean = node.strip()
-        # Recursive CTE for dynamic N-hop traversal with cycle detection
         base_proj = "AND project = :project" if project else ""
         base_sup = "AND (superseded_by IS NULL OR superseded_by = '')" if not include_superseded else ""
         rec_proj = "AND e.project = :project" if project else ""
@@ -517,7 +526,6 @@ def query_graph(node: str, depth: int = 2, project: Optional[str] = None, includ
 
         cte_sql = f"""
         WITH RECURSIVE graph_walk(source, relation, target, weight, project, valid_from, valid_until, hop, path) AS (
-            -- Base case: 1-hop
             SELECT source, relation, target, weight, project, valid_from, valid_until, 1 as hop,
                    source || '->' || target as path
             FROM edges
@@ -527,7 +535,6 @@ def query_graph(node: str, depth: int = 2, project: Optional[str] = None, includ
 
             UNION ALL
 
-            -- Recursive step: next hops up to max depth
             SELECT e.source, e.relation, e.target, e.weight, e.project, e.valid_from, e.valid_until, gw.hop + 1,
                    gw.path || '->' || e.target
             FROM edges e
@@ -571,6 +578,7 @@ def deduplicate_memories(similarity_threshold: float = 0.92, project: Optional[s
     Finds clusters of duplicate/near-identical memory nodes, merges access counts and edges,
     and prunes redundant duplicate records in chunks of 1,000 nodes.
     """
+    project = _normalize_project(project)  # FIX BUG 42
     conn = get_db()
     try:
         filter_str = "WHERE embedding IS NOT NULL"
@@ -584,21 +592,26 @@ def deduplicate_memories(similarity_threshold: float = 0.92, project: Optional[s
         if len(rows) < 2:
             return "Insufficient records to deduplicate."
 
-        vectors = [unpack_vector(r[2]) for r in rows if r[2]]
+        # FIX BUG 36: build row_index -> vector map to avoid index mismatch when some rows lack embeddings
+        row_vectors: Dict[int, List[float]] = {}
+        for i, r in enumerate(rows):
+            if r[2]:
+                row_vectors[i] = unpack_vector(r[2])
+
         merged_count = 0
         deleted_ids = set()
 
         conn.execute("BEGIN IMMEDIATE;")
         for i in range(len(rows)):
-            if rows[i][0] in deleted_ids:
+            if rows[i][0] in deleted_ids or i not in row_vectors:
                 continue
             primary_id = rows[i][0]
-            remaining_indices = [j for j in range(i + 1, len(rows)) if rows[j][0] not in deleted_ids]
+            remaining_indices = [j for j in range(i + 1, len(rows)) if rows[j][0] not in deleted_ids and j in row_vectors]
             if not remaining_indices:
                 continue
 
-            candidate_vecs = [vectors[j] for j in remaining_indices]
-            sims = amx_batch_cosine_similarity(vectors[i], candidate_vecs)
+            candidate_vecs = [row_vectors[j] for j in remaining_indices]
+            sims = amx_batch_cosine_similarity(row_vectors[i], candidate_vecs)
 
             for j_idx, sim in zip(remaining_indices, sims):
                 if rows[j_idx][0] in deleted_ids:
@@ -613,8 +626,20 @@ def deduplicate_memories(similarity_threshold: float = 0.92, project: Optional[s
                         (combined_access, max_importance, primary_id),
                     )
 
-                    conn.execute("UPDATE OR IGNORE edges SET source = ? WHERE source = ?", (primary_id, dup_id))
-                    conn.execute("UPDATE OR IGNORE edges SET target = ? WHERE target = ?", (primary_id, dup_id))
+                    # FIX BUG 22: delete conflicting edges first, then update remaining
+                    # This prevents silent data loss from UPDATE OR IGNORE PK conflicts
+                    conn.execute(
+                        """DELETE FROM edges WHERE source = ? AND (target, relation, project) IN
+                           (SELECT target, relation, project FROM edges WHERE source = ?)""",
+                        (primary_id, dup_id),
+                    )
+                    conn.execute("UPDATE edges SET source = ? WHERE source = ?", (primary_id, dup_id))
+                    conn.execute(
+                        """DELETE FROM edges WHERE target = ? AND (source, relation, project) IN
+                           (SELECT source, relation, project FROM edges WHERE target = ?)""",
+                        (primary_id, dup_id),
+                    )
+                    conn.execute("UPDATE edges SET target = ? WHERE target = ?", (primary_id, dup_id))
 
                     conn.execute("DELETE FROM nodes WHERE id = ?", (dup_id,))
                     deleted_ids.add(dup_id)
@@ -633,8 +658,8 @@ def visualize_graph(node: str, depth: int = 2, project: Optional[str] = None) ->
     Generates Mermaid.js and ASCII relational network diagrams for power users.
     """
     graph_text = query_graph(node, depth=depth, project=project)
+    # FIX BUG F: match actual return strings from query_graph
     if "No active graph edges found" in graph_text or "No graph edges found" in graph_text:
-
         return graph_text
 
     mermaid_lines = ["```mermaid", "graph LR", f'  root["{node}"]:::primary']
@@ -646,14 +671,23 @@ def visualize_graph(node: str, depth: int = 2, project: Optional[str] = None) ->
         ascii_lines.append(f"  {line}")
         parts = line.split("-[")
         if len(parts) >= 2:
-            src = parts[0].replace("(", "").replace(")", "").replace("-hop", "").strip().strip("[]")
+            # FIX BUG 45: strip (N-hop) prefix before extracting source node name
+            raw_src = parts[0].strip()
+            raw_src = re.sub(r'^\(\d+-hop\)\s*', '', raw_src).strip()
+            src = raw_src.strip("[]")
             rest = parts[1].split("]->")
             if len(rest) == 2:
                 rel = rest[0].strip()
                 tgt = rest[1].split("(")[0].strip().strip("[]")
-                safe_src = re.sub(r"[^a-zA-Z0-9_]", "_", src)
-                safe_tgt = re.sub(r"[^a-zA-Z0-9_]", "_", tgt)
-                mermaid_lines.append(f'  {safe_src}["{src}"] -->|"{rel}"| {safe_tgt}["{tgt}"]')
+                safe_src = re.sub(r'[^a-zA-Z0-9_]', '_', src)
+                safe_tgt = re.sub(r'[^a-zA-Z0-9_]', '_', tgt)
+                # FIX BUG 46: Mermaid node IDs cannot start with digits
+                if safe_src and safe_src[0].isdigit():
+                    safe_src = "_" + safe_src
+                if safe_tgt and safe_tgt[0].isdigit():
+                    safe_tgt = "_" + safe_tgt
+                if safe_src and safe_tgt:
+                    mermaid_lines.append(f'  {safe_src}["{src}"] -->|"{rel}"| {safe_tgt}["{tgt}"]')
 
     mermaid_lines.append("  classDef primary fill:#ff79c6,stroke:#bd93f9,stroke-width:2px,color:#fff;")
     mermaid_lines.append("```")
@@ -670,22 +704,34 @@ def consolidate_reflections(topic: str, project: str = "default") -> str:
     conn = get_db()
     try:
         safe_topic = escape_fts(topic)
-        fts_query = f'"{safe_topic}"' if safe_topic else '""'
-        
-        rows = conn.execute(
-            """
-            SELECT n.id, n.content, n.importance FROM nodes_fts f JOIN nodes n ON f.id=n.id
-            WHERE nodes_fts MATCH ? AND n.project = ?
-            ORDER BY n.access_count DESC, n.importance DESC
-            LIMIT 10
-            """,
-            (fts_query, project),
-        ).fetchall()
+        # FIX BUG 44/35: short topics (<3 chars) can't use FTS5 trigram - fall back to LIKE
+        if len(safe_topic) >= 3:
+            fts_query = f'"{safe_topic}"' if safe_topic else '""'
+            rows = conn.execute(
+                """
+                SELECT n.id, n.content, n.importance FROM nodes_fts f JOIN nodes n ON f.id=n.id
+                WHERE nodes_fts MATCH ? AND n.project = ?
+                ORDER BY n.access_count DESC, n.importance DESC
+                LIMIT 10
+                """,
+                (fts_query, project),
+            ).fetchall()
+        else:
+            rows = conn.execute(
+                """
+                SELECT id, content, importance FROM nodes
+                WHERE content LIKE ? AND project = ?
+                ORDER BY access_count DESC, importance DESC
+                LIMIT 10
+                """,
+                (f"%{safe_topic}%", project),
+            ).fetchall()
 
         if not rows:
             return f"Insufficient memories found for topic '{topic}' in project '{project}' to consolidate."
 
-        summary_points = [f"- {r[1][:100]}..." for r in rows]
+        # FIX BUG 33: only append '...' if content was actually truncated
+        summary_points = [f"- {r[1][:100]}{'...' if len(r[1]) > 100 else ''}" for r in rows]
         reflection_content = (
             f"[Consolidated Reflection on '{topic}'] (Project: {project}):\n"
             f"Synthesized from {len(rows)} memory records:\n" + "\n".join(summary_points)
@@ -722,6 +768,7 @@ def auto_context(limit: int = 5, min_importance: int = 7, project: Optional[str]
     Auto-Context Boot Tool for Agents:
     Recalls top high-importance active memories formatted in XML for session initialization.
     """
+    project = _normalize_project(project)  # FIX BUG 42
     limit_clamped = max(1, min(100, int(limit)))
     min_imp_clamped = max(1, min(10, int(min_importance)))
     conn = get_db()
@@ -754,13 +801,21 @@ def auto_context(limit: int = 5, min_importance: int = 7, project: Optional[str]
                 f"  </memory>"
             )
 
+        # FIX BUG 27: explicit BEGIN IMMEDIATE for access count update to prevent lock errors
         if ids_to_bump:
-            placeholders = ",".join("?" for _ in ids_to_bump)
-            conn.execute(
-                f"UPDATE nodes SET access_count = access_count + 1, last_accessed_at = ? WHERE id IN ({placeholders})",
-                [now_iso] + ids_to_bump,
-            )
-            conn.commit()
+            try:
+                conn.execute("BEGIN IMMEDIATE;")
+                placeholders = ",".join("?" for _ in ids_to_bump)
+                conn.execute(
+                    f"UPDATE nodes SET access_count = access_count + 1, last_accessed_at = ? WHERE id IN ({placeholders})",
+                    [now_iso] + ids_to_bump,
+                )
+                conn.commit()
+            except Exception:
+                try:
+                    conn.rollback()
+                except Exception:
+                    pass
 
         body = "\n".join(xml_entries)
         return f"<engram_context count='{len(rows)}'>\n{body}\n</engram_context>"
@@ -830,6 +885,7 @@ def delete_memory(id: str) -> str:
 @retry_db_lock(max_retries=7)
 def list_memories(limit: int = 50, project: Optional[str] = None) -> str:
     """List recent memory nodes in the database, ordered by importance and recency."""
+    project = _normalize_project(project)  # FIX BUG 42
     conn = get_db()
     try:
         proj_filter = "WHERE project = ?" if project else ""
@@ -872,7 +928,7 @@ def get_stats() -> str:
         tier_status = get_acceleration_tier()
         model = get_embedding_model()
         model_name = "BAAI/bge-small-en-v1.5 (Neural ONNX)" if model is not None else "Hashed Hypersphere Projection (Zero-Dependency Fallback)"
-        
+
         has_vec = False
         try:
             cur = conn.execute("SELECT name FROM sqlite_master WHERE type='table' AND name='nodes_vec';")

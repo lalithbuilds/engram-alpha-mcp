@@ -111,9 +111,14 @@ def run_hardware_benchmark(num_vectors: int = 10000):
     print(f"Active Hardware Tier: {tier_name}")
     print(f"Evaluating {num_vectors:,} 384-dimensional normalized float vectors...")
 
-    # Generate synthetic vector matrix
-    query = [1.0 / (384 ** 0.5)] * 384
-    matrix = [[(i % 10) * 0.1 for _ in range(384)] for i in range(num_vectors)]
+    # FIX BUG 16: Generate synthetic valid unit vectors (no zero vectors)
+    import math
+    query = [1.0 / math.sqrt(384)] * 384
+    matrix = []
+    for i in range(num_vectors):
+        vec = [((i % 10) + 1) * 0.1 for _ in range(384)]
+        norm = math.sqrt(sum(v*v for v in vec))
+        matrix.append([v / norm for v in vec])
 
     start_t = time.perf_counter()
     scores = amx_batch_cosine_similarity(query, matrix)

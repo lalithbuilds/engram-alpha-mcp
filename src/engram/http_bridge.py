@@ -213,6 +213,16 @@ class EngramHTTPHandler(BaseHTTPRequestHandler):
         self._send_cors_headers()
         self.end_headers()
 
+    def _send_json(self, status: int, data: dict) -> None:
+        """FIX BUG 11: always set Content-Length so HTTP/1.1 clients don't hang."""
+        body = json.dumps(data).encode("utf-8")
+        self.send_response(status)
+        self.send_header("Content-Type", "application/json")
+        self.send_header("Content-Length", str(len(body)))
+        self._send_cors_headers()
+        self.end_headers()
+        self.wfile.write(body)
+
     def do_GET(self):
         parsed = urllib.parse.urlparse(self.path)
         path = parsed.path
@@ -220,45 +230,36 @@ class EngramHTTPHandler(BaseHTTPRequestHandler):
 
         # Public endpoints
         if path == "/dashboard":
+            body = DASHBOARD_HTML.encode("utf-8")
             self.send_response(200)
             self.send_header("Content-Type", "text/html; charset=utf-8")
+            self.send_header("Content-Length", str(len(body)))
             self._send_cors_headers()
             self.end_headers()
-            self.wfile.write(DASHBOARD_HTML.encode("utf-8"))
+            self.wfile.write(body)
             return
 
         if path == "/health":
-            self.send_response(200)
-            self.send_header("Content-Type", "application/json")
-            self._send_cors_headers()
-            self.end_headers()
-            self.wfile.write(json.dumps({"status": "healthy", "tier": get_acceleration_tier()}).encode("utf-8"))
+            self._send_json(200, {"status": "healthy", "tier": get_acceleration_tier()})
             return
 
         if path == "/openapi.json":
-            self.send_response(200)
-            self.send_header("Content-Type", "application/json")
-            self._send_cors_headers()
-            self.end_headers()
             host_header = self.headers.get("Host", "localhost:8000")
             proto = "https" if self.headers.get("X-Forwarded-Proto") == "https" else "http"
             schema = get_openapi_schema(f"{proto}://{host_header}")
-            self.wfile.write(json.dumps(schema, indent=2).encode("utf-8"))
+            body = json.dumps(schema, indent=2).encode("utf-8")
+            self.send_response(200)
+            self.send_header("Content-Type", "application/json")
+            self.send_header("Content-Length", str(len(body)))
+            self._send_cors_headers()
+            self.end_headers()
+            self.wfile.write(body)
             return
 
         # Authenticated endpoints
         if not self._check_auth():
-            self.send_response(401)
-            self.send_header("Content-Type", "application/json")
-            self._send_cors_headers()
-            self.end_headers()
-            self.wfile.write(json.dumps({"error": "Unauthorized. Provide valid Bearer token in Authorization header."}).encode("utf-8"))
+            self._send_json(401, {"error": "Unauthorized. Provide valid Bearer token in Authorization header."})
             return
-
-        self.send_response(200)
-        self.send_header("Content-Type", "application/json")
-        self._send_cors_headers()
-        self.end_headers()
 
         if path == "/search":
             q = params.get("q", [""])[0]
@@ -266,9 +267,14 @@ class EngramHTTPHandler(BaseHTTPRequestHandler):
                 limit = int(params.get("limit", [5])[0])
             except (ValueError, TypeError):
                 limit = 5
-            project = params.get("project", [None])[0]
-            res = search_memory(q, limit=limit, project=project)
-            self.wfile.write(json.dumps({"query": q, "results": res, "project": project}).encode("utf-8"))
+            # FIX BUG 42: normalize empty project string to None
+            project = params.get("project", [None])[0] or None
+            # FIX BUG 47: wrap tool calls in try/except to return 500 on failure
+            try:
+                res = search_memory(q, limit=limit, project=project)
+                self._send_json(200, {"query": q, "results": res, "project": project})
+            except Exception as e:
+                self._send_json(500, {"error": f"Internal error: {str(e)}"})
             return
 
         elif path == "/graph":
@@ -277,29 +283,32 @@ class EngramHTTPHandler(BaseHTTPRequestHandler):
                 depth = int(params.get("depth", [2])[0])
             except (ValueError, TypeError):
                 depth = 2
-            project = params.get("project", [None])[0]
-            res = query_graph(node, depth=depth, project=project)
-            self.wfile.write(json.dumps({"node": node, "depth": depth, "graph": res}).encode("utf-8"))
+            project = params.get("project", [None])[0] or None
+            try:
+                res = query_graph(node, depth=depth, project=project)
+                self._send_json(200, {"node": node, "depth": depth, "graph": res})
+            except Exception as e:
+                self._send_json(500, {"error": f"Internal error: {str(e)}"})
             return
 
         elif path == "/stats":
-            stats_str = get_stats()
-            self.wfile.write(json.dumps({"status": "ok", "stats": stats_str, "tier": get_acceleration_tier()}).encode("utf-8"))
+            try:
+                stats_str = get_stats()
+                self._send_json(200, {"status": "ok", "stats": stats_str, "tier": get_acceleration_tier()})
+            except Exception as e:
+                self._send_json(500, {"error": f"Internal error: {str(e)}"})
             return
 
         else:
-            self.wfile.write(json.dumps({"error": f"Path '{path}' not found. Visit /openapi.json or /dashboard."}).encode("utf-8"))
+            # FIX BUG 9: unknown GET path returns 404, not 200
+            self._send_json(404, {"error": f"Path '{path}' not found. Visit /openapi.json or /dashboard."})
 
     def do_POST(self):
         parsed = urllib.parse.urlparse(self.path)
         path = parsed.path
 
         if not self._check_auth():
-            self.send_response(401)
-            self.send_header("Content-Type", "application/json")
-            self._send_cors_headers()
-            self.end_headers()
-            self.wfile.write(json.dumps({"error": "Unauthorized. Provide valid Bearer token in Authorization header."}).encode("utf-8"))
+            self._send_json(401, {"error": "Unauthorized. Provide valid Bearer token in Authorization header."})
             return
 
         try:
@@ -307,26 +316,22 @@ class EngramHTTPHandler(BaseHTTPRequestHandler):
         except (ValueError, TypeError):
             content_length = 0
 
+        # FIX BUG 29: reject negative Content-Length (rfile.read(-1) reads until EOF = DoS vector)
+        if content_length < 0:
+            self._send_json(400, {"error": "Invalid Content-Length."})
+            return
+
         # Enforce 10MB payload size limit
         if content_length > 10 * 1024 * 1024:
-            self.send_response(413)
-            self.send_header("Content-Type", "application/json")
-            self._send_cors_headers()
-            self.end_headers()
-            self.wfile.write(json.dumps({"error": "Payload Too Large (max 10MB)."}).encode("utf-8"))
+            self._send_json(413, {"error": "Payload Too Large (max 10MB)."})
             return
 
         body = self.rfile.read(content_length).decode("utf-8", errors="replace") if content_length > 0 else "{}"
-        
+
         try:
             data = json.loads(body)
         except Exception:
             data = {}
-
-        self.send_response(200)
-        self.send_header("Content-Type", "application/json")
-        self._send_cors_headers()
-        self.end_headers()
 
         if path == "/save":
             content = data.get("content", "")
@@ -335,20 +340,30 @@ class EngramHTTPHandler(BaseHTTPRequestHandler):
                 importance = int(data.get("importance", 5))
             except (ValueError, TypeError):
                 importance = 5
-            project = data.get("project", "default")
-            res = save_memory(content, category=category, importance=importance, project=project)
-            self.wfile.write(json.dumps({"status": "success", "message": res}).encode("utf-8"))
+            project = data.get("project", "default") or "default"
+            try:
+                res = save_memory(content, category=category, importance=importance, project=project)
+                self._send_json(200, {"status": "success", "message": res})
+            except Exception as e:
+                self._send_json(500, {"error": f"Internal error: {str(e)}"})
             return
 
         elif path == "/extract":
             text = data.get("text", "")
-            project = data.get("project", "default")
-            res = extract_and_save_memory(text, project=project)
-            self.wfile.write(json.dumps({"status": "success", "message": res}).encode("utf-8"))
+            project = data.get("project", "default") or "default"
+            try:
+                res = extract_and_save_memory(text, project=project)
+                self._send_json(200, {"status": "success", "message": res})
+            except Exception as e:
+                self._send_json(500, {"error": f"Internal error: {str(e)}"})
             return
 
         else:
-            self.wfile.write(json.dumps({"error": f"POST path '{path}' not recognized."}).encode("utf-8"))
+            # FIX BUG 10: unknown POST path returns 404, not 200
+            self._send_json(404, {"error": f"POST path '{path}' not recognized."})
+
+    def log_message(self, format, *args):
+        pass  # suppress default request logging noise
 
 def start_http_gateway(host: str = "0.0.0.0", port: int = 8000):
     """Start the universal Engram Alpha Threaded HTTP & Web Agent Gateway."""
