@@ -103,18 +103,31 @@ def pack_vector(vec: List[float]) -> bytes:
     return struct.pack(f"{len(vec)}f", *vec)
 
 def unpack_vector(blob: bytes) -> List[float]:
-    """Unpack compact binary blob to float array."""
-    count = len(blob) // 4
-    return list(struct.unpack(f"{count}f", blob))
+    """Unpack compact binary blob to float array safely with corrupted buffer protection."""
+    if not blob:
+        return [0.0] * 384
+    try:
+        valid_len = (len(blob) // 4) * 4
+        count = valid_len // 4
+        if count == 0:
+            return [0.0] * 384
+        unpacked = list(struct.unpack(f"{count}f", blob[:valid_len]))
+        return [0.0 if (math.isnan(x) or math.isinf(x)) else x for x in unpacked]
+    except Exception:
+        return [0.0] * 384
 
 def compute_similarity_pure_python(vec_a: List[float], vec_b: List[float]) -> float:
     """Tier 3: Pure Python float arithmetic (runs on any OS, micro-controller, or Docker container)."""
-    dot = sum(x * y for x, y in zip(vec_a, vec_b))
-    norm_a = math.sqrt(sum(x * x for x in vec_a))
-    norm_b = math.sqrt(sum(y * y for y in vec_b))
-    if norm_a == 0.0 or norm_b == 0.0:
+    try:
+        dot = sum(x * y for x, y in zip(vec_a, vec_b))
+        norm_a = math.sqrt(sum(x * x for x in vec_a))
+        norm_b = math.sqrt(sum(y * y for y in vec_b))
+        if norm_a == 0.0 or norm_b == 0.0 or math.isnan(norm_a) or math.isnan(norm_b):
+            return 0.0
+        val = float(dot / (norm_a * norm_b))
+        return 0.0 if (math.isnan(val) or math.isinf(val)) else val
+    except Exception:
         return 0.0
-    return float(dot / (norm_a * norm_b))
 
 def amx_cosine_similarity(vec_a: List[float], vec_b: List[float]) -> float:
     """
@@ -132,9 +145,10 @@ def amx_cosine_similarity(vec_a: List[float], vec_b: List[float]) -> float:
             dot = _cblas_sdot(n, arr_a, 1, arr_b, 1)
             norm_a = _cblas_snrm2(n, arr_a, 1)
             norm_b = _cblas_snrm2(n, arr_b, 1)
-            if norm_a <= 0.0 or norm_b <= 0.0:
+            if norm_a == 0.0 or norm_b == 0.0 or math.isnan(norm_a) or math.isnan(norm_b):
                 return 0.0
-            return float(dot / (norm_a * norm_b))
+            val = float(dot / (norm_a * norm_b))
+            return 0.0 if (math.isnan(val) or math.isinf(val)) else val
         except Exception:
             pass
 

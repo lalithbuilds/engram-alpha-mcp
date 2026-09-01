@@ -195,14 +195,21 @@ def init_db():
         
     return conn
 
-def optimize_and_checkpoint(conn) -> Dict[str, Any]:
+def optimize_and_checkpoint(conn=None) -> Dict[str, Any]:
     """Execute WAL checkpoint, vacuum, and index optimization."""
+    close_when_done = False
+    if conn is None:
+        conn = get_db()
+        close_when_done = True
     try:
         wal_res = conn.execute("PRAGMA wal_checkpoint(TRUNCATE);").fetchall()
         conn.execute("PRAGMA optimize;")
         return {"status": "optimized", "checkpoint": wal_res}
     except Exception as e:
         return {"status": "error", "message": str(e)}
+    finally:
+        if close_when_done:
+            conn.close()
 
 def get_db():
     conn = init_db()
