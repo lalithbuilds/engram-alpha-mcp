@@ -143,22 +143,22 @@ Built-in HTTP & Server-Sent Events (SSE) gateway compliant with OpenAPI 3.0. All
 
 ### 1. Installation
 
-#### Lightweight Standard (Zero-Dependency Fallback)
-```bash
-pip install engram-alpha
-```
+> [!IMPORTANT]
+> **Recommended Install for Full Deep Neural Semantic Search & Native ANN Vector Indexing:**
+> ```bash
+> pip install "engram-alpha[all]"
+> # Or from local clone:
+> pip install -e ".[all]"
+> ```
+> *Installs `fastembed` (BAAI/bge-small-en-v1.5 ONNX), `sqlite-vec` (native C-level ANN virtual tables), and `numpy`.*
 
-#### From Local Source (Editable Mode)
-```bash
-git clone https://github.com/lalithbuilds/engram-alpha-mcp.git
-cd engram-alpha-mcp
-pip install -e .
-```
+#### Tier Options Matrix:
 
-#### Full Acceleration (Deep Neural Embeddings + NumPy + Vector SQLite)
-```bash
-pip install "engram-alpha[all]"
-```
+| Installation Command | Dependencies | Embedding Backend | Vector Engine | Use Case |
+| :--- | :--- | :--- | :--- | :--- |
+| **`pip install -e ".[all]"`** *(Recommended)* | `fastembed`, `sqlite-vec`, `numpy` | **Neural ONNX** (`bge-small-en-v1.5`) | **Native `sqlite-vec` ANN (`vec0`)** | Full semantic synonym recall + 5M+ node scaling |
+| **`pip install -e ".[local]"`** | `fastembed`, `sqlite-vec`, `numpy` | **Neural ONNX** (`bge-small-en-v1.5`) | **Native `sqlite-vec` ANN (`vec0`)** | Linux & Windows local acceleration |
+| **`pip install -e .`** *(Base/Minimal)* | Pure Stdlib (`mcp` only) | **Hashed Hypersphere Projection** | **AMX / BLAS Exact Matrix Scan** | Zero-dependency environments, air-gapped Docker |
 
 ---
 

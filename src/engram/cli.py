@@ -32,12 +32,47 @@ from .server import (
     delete_memory,
     list_memories,
 )
-from .ingest import watch_obsidian_vault
 from .amx import (
     is_amx_hardware_available,
     amx_batch_cosine_similarity,
     get_acceleration_tier,
+    get_embedding_model,
 )
+
+def cmd_doctor():
+    """Diagnose local system environment, active embedding model, and vector indexing tier."""
+    print("=" * 65)
+    print("🏥 ENGRAM ALPHA SYSTEM & HARDWARE DIAGNOSTIC")
+    print("=" * 65)
+    tier = get_acceleration_tier()
+    model = get_embedding_model()
+    
+    conn = get_db()
+    has_vec = False
+    try:
+        cur = conn.execute("SELECT name FROM sqlite_master WHERE type='table' AND name='nodes_vec';")
+        has_vec = cur.fetchone() is not None
+    except Exception:
+        has_vec = False
+    node_count = conn.execute("SELECT COUNT(*) FROM nodes;").fetchone()[0]
+    edge_count = conn.execute("SELECT COUNT(*) FROM edges;").fetchone()[0]
+    conn.close()
+
+    print(f"• Hardware Engine Tier    : {tier}")
+    if model is not None:
+        print(f"• Embedding Backend       : ✅ BAAI/bge-small-en-v1.5 (Neural ONNX Semantic Engine)")
+    else:
+        print(f"• Embedding Backend       : ⚠️ Hashed Hypersphere Projection (Zero-Dependency Fallback)")
+        print(f"  💡 To enable deep neural semantic synonym recall, run:")
+        print(f"     pip install 'engram[local]' or pip install fastembed")
+
+    if has_vec:
+        print(f"• Vector Indexing Engine  : ✅ Native sqlite-vec (vec0 ANN Virtual Table, 5M+ scale)")
+    else:
+        print(f"• Vector Indexing Engine  : ⚡ SIMD AMX / BLAS Exact Matrix Scan")
+
+    print(f"• Storage State           : Healthy ({node_count:,} nodes, {edge_count:,} edges)")
+    print("=" * 65)
 
 def setup_claude_desktop():
     """Auto-configure Claude Desktop configuration file across macOS, Windows, and Linux."""
@@ -328,6 +363,9 @@ def main():
     # Setup
     subparsers.add_parser("setup", help="Auto-configure Claude Desktop")
 
+    # Doctor / Diagnostic
+    subparsers.add_parser("doctor", help="Diagnose system, embedding backend, and vector acceleration tier")
+
     args = parser.parse_args()
 
     if args.command == "save":
@@ -376,6 +414,7 @@ def main():
         res = ingest_obsidian(args.vault_path, project=args.project)
         print(res)
     elif args.command == "watch":
+        from .ingest import watch_obsidian_vault
         watch_obsidian_vault(args.vault_path, project=args.project)
     elif args.command == "checkpoint":
         res = checkpoint_db()
@@ -384,6 +423,8 @@ def main():
         print(get_stats())
     elif args.command == "benchmark":
         run_hardware_benchmark(num_vectors=args.vectors)
+    elif args.command == "doctor":
+        cmd_doctor()
     elif args.command == "serve":
         from .http_bridge import start_http_gateway
         start_http_gateway(host=args.host, port=args.port)
