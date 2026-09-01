@@ -73,6 +73,26 @@ def test_graph_visualizer():
     assert "RayOrchestrator" in viz_res
     assert "MemorySwarm" in viz_res
 
+def test_recursive_bitemporal_graph():
+    # 1. Test multi-hop chain A -> B -> C
+    save_graph_relation("NodeA", "connects_to", "NodeB", weight=1.0, project="graph_rec", valid_from="2026-01-01")
+    save_graph_relation("NodeB", "connects_to", "NodeC", weight=1.0, project="graph_rec", valid_from="2026-01-01")
+
+    # Query with depth 2 recursive CTE
+    res = query_graph("NodeA", depth=2, project="graph_rec")
+    assert "NodeA" in res
+    assert "NodeB" in res
+    assert "NodeC" in res
+    assert "Valid: 2026-01-01" in res
+
+    # 2. Test superseded edge filtering
+    save_graph_relation("NodeA", "uses_version", "v1", weight=1.0, project="graph_rec", superseded_by="v2")
+    save_graph_relation("NodeA", "uses_version", "v2", weight=1.0, project="graph_rec")
+
+    active_res = query_graph("NodeA", depth=1, project="graph_rec", include_superseded=False)
+    assert "v2" in active_res
+    assert "v1" not in active_res
+
 def test_checkpoint_and_optimize():
     res = checkpoint_db()
     assert "Database Checkpoint Status" in res

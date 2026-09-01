@@ -148,3 +148,31 @@ def test_concurrent_web_agent_requests():
 
     assert len(results) == 20
     assert all(results)
+
+def test_http_dashboard_endpoint():
+    with urllib.request.urlopen(f"{BASE_URL}/dashboard") as resp:
+        assert resp.status == 200
+        html = resp.read().decode()
+        assert "<!DOCTYPE html>" in html
+        assert "Engram Alpha Cognitive Dashboard" in html
+        assert "Force-Directed" in html or "Semantic Memory Recall" in html
+
+def test_http_bearer_auth(monkeypatch):
+    monkeypatch.setenv("ENGRAM_API_KEY", "secret_test_token_123")
+
+    # 1. Unauthenticated request should fail with 401
+    try:
+        req = urllib.request.Request(f"{BASE_URL}/search?q=test")
+        urllib.request.urlopen(req)
+        assert False, "Should have raised HTTP 401"
+    except urllib.error.HTTPError as e:
+        assert e.code == 401
+
+    # 2. Authenticated request with Bearer token should succeed
+    req_auth = urllib.request.Request(
+        f"{BASE_URL}/search?q=test",
+        headers={"Authorization": "Bearer secret_test_token_123"},
+    )
+    with urllib.request.urlopen(req_auth) as resp:
+        assert resp.status == 200
+

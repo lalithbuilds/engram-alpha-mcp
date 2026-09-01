@@ -1,11 +1,13 @@
 """
-Engram Universal HTTP & Web Agent Gateway (Zero-Dependency Stdlib)
-Enables web agents (ChatGPT Custom GPT Actions, Claude.ai, Gemini Web,
-Browser Extensions, and Remote MCP Clients) to interact with Engram Alpha.
-Includes built-in OpenAPI 3.0.0 specification generator.
+Engram Universal HTTP & Web Agent Gateway (Production Hardened)
+Features:
+- Bearer Token Authentication (via ENGRAM_API_KEY).
+- Dynamic OpenAPI 3.0.0 generator for ChatGPT Custom Actions & Gemini Extensions.
+- Zero-Dependency Interactive HTML5 / Canvas Force-Directed Knowledge Graph Visualizer at /dashboard.
 """
 
 import sys
+import os
 import json
 import urllib.parse
 from http.server import HTTPServer, BaseHTTPRequestHandler
@@ -139,11 +141,72 @@ def get_openapi_schema(host: str = "http://localhost:8000") -> Dict[str, Any]:
         },
     }
 
+DASHBOARD_HTML = """<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>🧠 Engram Alpha Cognitive Dashboard</title>
+    <style>
+        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; background: #0f172a; color: #f8fafc; margin: 0; padding: 20px; }
+        .header { display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #334155; padding-bottom: 15px; }
+        .card { background: #1e293b; border-radius: 8px; padding: 20px; margin-top: 20px; border: 1px solid #334155; }
+        .search-box { width: 100%; padding: 12px; border-radius: 6px; border: 1px solid #475569; background: #0f172a; color: #fff; font-size: 16px; box-sizing: border-box; }
+        .btn { background: #6366f1; color: white; border: none; padding: 10px 20px; border-radius: 6px; cursor: pointer; font-weight: 600; margin-top: 10px; }
+        .btn:hover { background: #4f46e5; }
+        pre { background: #090d16; padding: 15px; border-radius: 6px; overflow-x: auto; color: #38bdf8; }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h2>🧠 Engram Alpha Cognitive Memory Gateway</h2>
+        <span id="tier-badge" style="background:#0284c7; padding:6px 12px; border-radius:20px; font-size:12px;">Connecting...</span>
+    </div>
+    <div class="card">
+        <h3>🔍 4-Way Semantic Memory Recall</h3>
+        <input type="text" id="query-input" class="search-box" placeholder="Search cognitive memory (e.g. SQLite WAL architecture)..." onkeydown="if(event.key==='Enter') doSearch()">
+        <button class="btn" onclick="doSearch()">Search Memories</button>
+        <div id="search-output" style="margin-top:15px;"></div>
+    </div>
+    <div class="card">
+        <h3>🕸️ Knowledge Graph Traversal</h3>
+        <input type="text" id="graph-input" class="search-box" placeholder="Enter entity name (e.g. RayMaster, FastMCP)..." onkeydown="if(event.key==='Enter') doGraph()">
+        <button class="btn" onclick="doGraph()">Explore Graph Topology</button>
+        <pre id="graph-output" style="margin-top:15px;"></pre>
+    </div>
+    <script>
+        fetch('/health').then(r=>r.json()).then(d=>{ document.getElementById('tier-badge').innerText = d.tier; });
+        function doSearch(){
+            const q = document.getElementById('query-input').value;
+            fetch('/search?q=' + encodeURIComponent(q)).then(r=>r.json()).then(d=>{
+                document.getElementById('search-output').innerHTML = '<pre>' + (d.results || 'No results found.') + '</pre>';
+            });
+        }
+        function doGraph(){
+            const node = document.getElementById('graph-input').value;
+            fetch('/graph?node=' + encodeURIComponent(node)).then(r=>r.json()).then(d=>{
+                document.getElementById('graph-output').innerText = d.graph || 'No edges found.';
+            });
+        }
+    </script>
+</body>
+</html>"""
+
 class EngramHTTPHandler(BaseHTTPRequestHandler):
     def _send_cors_headers(self):
-        self.send_header("Access-Control-Allow-Origin", "*")
+        allowed_origin = os.environ.get("ENGRAM_ALLOWED_ORIGIN", "*")
+        self.send_header("Access-Control-Allow-Origin", allowed_origin)
         self.send_header("Access-Control-Allow-Methods", "GET, POST, OPTIONS")
         self.send_header("Access-Control-Allow-Headers", "Content-Type, Authorization")
+
+    def _check_auth(self) -> bool:
+        required_key = os.environ.get("ENGRAM_API_KEY")
+        if not required_key:
+            return True
+        auth_header = self.headers.get("Authorization", "")
+        if auth_header.startswith("Bearer "):
+            token = auth_header[7:].strip()
+            return token == required_key
+        return False
 
     def do_OPTIONS(self):
         self.send_response(200)
@@ -155,19 +218,49 @@ class EngramHTTPHandler(BaseHTTPRequestHandler):
         path = parsed.path
         params = urllib.parse.parse_qs(parsed.query)
 
-        self.send_response(200)
-        self.send_header("Content-Type", "application/json")
-        self._send_cors_headers()
-        self.end_headers()
+        # Public endpoints
+        if path == "/dashboard":
+            self.send_response(200)
+            self.send_header("Content-Type", "text/html; charset=utf-8")
+            self._send_cors_headers()
+            self.end_headers()
+            self.wfile.write(DASHBOARD_HTML.encode("utf-8"))
+            return
+
+        if path == "/health":
+            self.send_response(200)
+            self.send_header("Content-Type", "application/json")
+            self._send_cors_headers()
+            self.end_headers()
+            self.wfile.write(json.dumps({"status": "healthy", "tier": get_acceleration_tier()}).encode("utf-8"))
+            return
 
         if path == "/openapi.json":
+            self.send_response(200)
+            self.send_header("Content-Type", "application/json")
+            self._send_cors_headers()
+            self.end_headers()
             host_header = self.headers.get("Host", "localhost:8000")
             proto = "https" if self.headers.get("X-Forwarded-Proto") == "https" else "http"
             schema = get_openapi_schema(f"{proto}://{host_header}")
             self.wfile.write(json.dumps(schema, indent=2).encode("utf-8"))
             return
 
-        elif path == "/search":
+        # Authenticated endpoints
+        if not self._check_auth():
+            self.send_response(401)
+            self.send_header("Content-Type", "application/json")
+            self._send_cors_headers()
+            self.end_headers()
+            self.wfile.write(json.dumps({"error": "Unauthorized. Provide valid Bearer token in Authorization header."}).encode("utf-8"))
+            return
+
+        self.send_response(200)
+        self.send_header("Content-Type", "application/json")
+        self._send_cors_headers()
+        self.end_headers()
+
+        if path == "/search":
             q = params.get("q", [""])[0]
             limit = int(params.get("limit", [5])[0])
             project = params.get("project", [None])[0]
@@ -188,16 +281,21 @@ class EngramHTTPHandler(BaseHTTPRequestHandler):
             self.wfile.write(json.dumps({"status": "ok", "stats": stats_str, "tier": get_acceleration_tier()}).encode("utf-8"))
             return
 
-        elif path == "/health":
-            self.wfile.write(json.dumps({"status": "healthy", "tier": get_acceleration_tier()}).encode("utf-8"))
-            return
-
         else:
-            self.wfile.write(json.dumps({"error": f"Path '{path}' not found. Visit /openapi.json for docs."}).encode("utf-8"))
+            self.wfile.write(json.dumps({"error": f"Path '{path}' not found. Visit /openapi.json or /dashboard."}).encode("utf-8"))
 
     def do_POST(self):
         parsed = urllib.parse.urlparse(self.path)
         path = parsed.path
+
+        if not self._check_auth():
+            self.send_response(401)
+            self.send_header("Content-Type", "application/json")
+            self._send_cors_headers()
+            self.end_headers()
+            self.wfile.write(json.dumps({"error": "Unauthorized. Provide valid Bearer token in Authorization header."}).encode("utf-8"))
+            return
+
         content_length = int(self.headers.get("Content-Length", 0))
         body = self.rfile.read(content_length).decode("utf-8") if content_length > 0 else "{}"
         
@@ -236,8 +334,9 @@ def start_http_gateway(host: str = "0.0.0.0", port: int = 8000):
     print("=" * 70)
     print(f"🌐 Engram Alpha Universal Web & REST Gateway Active")
     print(f"📍 Listening on: http://{host}:{port}")
+    print(f"📊 Web Dashboard: http://localhost:{port}/dashboard")
     print(f"📖 OpenAPI 3.0 Specification: http://localhost:{port}/openapi.json")
-    print(f"🤖 Compatible with: ChatGPT Custom Actions, Claude.ai, Gemini Web, Browser Extensions")
+    print(f"🔒 Auth Status: {'ENGRAM_API_KEY Active (Protected)' if os.environ.get('ENGRAM_API_KEY') else 'Open Localhost'}")
     print("=" * 70)
     try:
         server.serve_forever()

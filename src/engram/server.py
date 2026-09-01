@@ -64,14 +64,26 @@ def _save_node(
     
     conn.execute("BEGIN IMMEDIATE;")
     try:
-        if clean_words:
-            fts_query = " OR ".join(f'"{w}"' for w in clean_words)
-            for row in conn.execute(
-                "SELECT id, content FROM nodes_fts WHERE nodes_fts MATCH ?", (fts_query,)
-            ).fetchall():
-                row_words = set(w.lower() for w in escape_fts(row[1]).split() if len(w) > 2)
-                if len(clean_words & row_words) >= 2:
-                    warnings.append(f"Conflict found (ID {row[0]}): {row[1][:60]}... Did you mean to update?")
+        if len(clean_words) >= 3:
+            fts_query = " OR ".join(f'"{w}"' for w in list(clean_words)[:8])
+            candidate_rows = conn.execute(
+                "SELECT n.id, n.content, n.embedding FROM nodes_fts f JOIN nodes n ON f.id=n.id WHERE nodes_fts MATCH ? LIMIT 10",
+                (fts_query,),
+            ).fetchall()
+            for cand_id, cand_content, cand_blob in candidate_rows:
+                cand_words = set(w.lower() for w in escape_fts(cand_content).split() if len(w) > 2)
+                overlap_count = len(clean_words & cand_words)
+                
+                # Check cosine similarity if blob exists
+                is_high_sim = False
+                if cand_blob:
+                    cand_vec = unpack_vector(cand_blob)
+                    sim = amx_cosine_similarity(dense_vec, cand_vec)
+                    if sim >= 0.85:
+                        is_high_sim = True
+
+                if is_high_sim or overlap_count >= 4:
+                    warnings.append(f"Potential duplicate/conflict (ID {cand_id}): {cand_content[:60]}...")
                     
         conn.execute(
             """
@@ -321,18 +333,21 @@ def save_graph_relation(
     target: str,
     weight: float = 1.0,
     project: str = "default",
+    valid_from: str = "",
+    valid_until: str = "",
+    superseded_by: str = "",
 ) -> str:
-    """Save a strict Subject-Predicate-Object relation for Knowledge Graph traversal."""
+    """Save a Subject-Predicate-Object relation with bi-temporal validity and project namespace."""
     conn = get_db()
     conn.execute("BEGIN IMMEDIATE;")
     try:
         now = datetime.now(timezone.utc).isoformat()
         conn.execute(
             """
-            INSERT OR REPLACE INTO edges (source, target, relation, weight, created_at, project)
-            VALUES (?, ?, ?, ?, ?, ?)
+            INSERT OR REPLACE INTO edges (source, target, relation, weight, created_at, project, valid_from, valid_until, superseded_by, transaction_time)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
             """,
-            (source.strip(), target.strip(), relation.strip().lower(), float(weight), now, project),
+            (source.strip(), target.strip(), relation.strip().lower(), float(weight), now, project, valid_from, valid_until, superseded_by, now),
         )
         conn.commit()
     except Exception as e:
@@ -340,56 +355,67 @@ def save_graph_relation(
         raise e
     finally:
         conn.close()
-    return f"Saved edge: [{source}] -[{relation}]-> [{target}] (weight: {weight}, project: {project})"
+    valid_str = f" [Valid: {valid_from} -> {valid_until}]" if valid_from or valid_until else ""
+    return f"Saved edge: [{source}] -[{relation}]-> [{target}] (weight: {weight}, project: {project}){valid_str}"
 
 @mcp.tool()
 @retry_db_lock(max_retries=7)
-def query_graph(node: str, depth: int = 1, project: Optional[str] = None) -> str:
+def query_graph(node: str, depth: int = 2, project: Optional[str] = None, include_superseded: bool = False) -> str:
     """
-    Query knowledge graph relations with 1-hop and 2-hop spreading activation traversal.
+    Query knowledge graph relations with recursive multi-hop path traversal and bi-temporal filtering.
     """
     conn = get_db()
     try:
         node_clean = node.strip()
-        proj_filter = "AND project = ?" if project else ""
-        params_1 = [node_clean, node_clean] + ([project] if project else [])
+        # Recursive CTE for dynamic N-hop traversal with cycle detection
+        base_proj = "AND project = :project" if project else ""
+        base_sup = "AND (superseded_by IS NULL OR superseded_by = '')" if not include_superseded else ""
+        rec_proj = "AND e.project = :project" if project else ""
+        rec_sup = "AND (e.superseded_by IS NULL OR e.superseded_by = '')" if not include_superseded else ""
 
-        rows_1 = conn.execute(
-            f"""
-            SELECT source, relation, target, weight, project FROM edges
-            WHERE (source = ? OR target = ?) {proj_filter}
-            LIMIT 50
-            """,
-            params_1,
-        ).fetchall()
+        cte_sql = f"""
+        WITH RECURSIVE graph_walk(source, relation, target, weight, project, valid_from, valid_until, hop, path) AS (
+            -- Base case: 1-hop
+            SELECT source, relation, target, weight, project, valid_from, valid_until, 1 as hop,
+                   source || '->' || target as path
+            FROM edges
+            WHERE (source = :node OR target = :node)
+              {base_proj}
+              {base_sup}
 
-        if not rows_1:
-            return f"No graph edges found for node '{node_clean}'."
+            UNION ALL
 
-        triples = [f"[{r[0]}] -[{r[1]}]-> [{r[2]}] (w: {r[3]}, project: {r[4]})" for r in rows_1]
+            -- Recursive step: next hops up to max depth
+            SELECT e.source, e.relation, e.target, e.weight, e.project, e.valid_from, e.valid_until, gw.hop + 1,
+                   gw.path || '->' || e.target
+            FROM edges e
+            JOIN graph_walk gw ON (e.source = gw.target OR e.target = gw.source)
+            WHERE gw.hop < :max_depth
+              AND instr(gw.path, e.target) = 0
+              {rec_proj}
+              {rec_sup}
+        )
+        SELECT DISTINCT source, relation, target, weight, project, valid_from, valid_until, hop
+        FROM graph_walk
+        ORDER BY hop ASC, weight DESC
+        LIMIT 100;
+        """
 
-        if depth >= 2:
-            neighbors = set()
-            for r in rows_1:
-                if r[0] != node_clean: neighbors.add(r[0])
-                if r[2] != node_clean: neighbors.add(r[2])
+        params = {"node": node_clean, "max_depth": min(max(1, depth), 5)}
+        if project:
+            params["project"] = project
 
-            if neighbors:
-                placeholders = ",".join("?" for _ in neighbors)
-                params_2 = list(neighbors) + list(neighbors) + ([project] if project else []) + [node_clean, node_clean]
-                rows_2 = conn.execute(
-                    f"""
-                    SELECT source, relation, target, weight, project FROM edges
-                    WHERE (source IN ({placeholders}) OR target IN ({placeholders})) {proj_filter}
-                    AND source != ? AND target != ?
-                    LIMIT 50
-                    """,
-                    params_2,
-                ).fetchall()
-                for r in rows_2:
-                    t_str = f"  (2-hop) [{r[0]}] -[{r[1]}]-> [{r[2]}] (w: {r[3]}, project: {r[4]})"
-                    if t_str not in triples:
-                        triples.append(t_str)
+        rows = conn.execute(cte_sql, params).fetchall()
+
+        if not rows:
+            return f"No active graph edges found for node '{node_clean}'."
+
+        triples = []
+        for r in rows:
+            s, rel, t, w, proj, vf, vu, hop = r
+            hop_prefix = f"({hop}-hop) " if hop > 1 else ""
+            valid_info = f" [Valid: {vf}..{vu}]" if vf or vu else ""
+            triples.append(f"{hop_prefix}[{s}] -[{rel}]-> [{t}] (w: {w}, project: {proj}){valid_info}")
 
         return "\n".join(triples)
     finally:

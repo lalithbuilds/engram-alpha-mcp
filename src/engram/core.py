@@ -136,6 +136,10 @@ def init_db():
                 weight REAL DEFAULT 1.0,
                 created_at TEXT DEFAULT '',
                 project TEXT NOT NULL DEFAULT 'default',
+                valid_from TEXT DEFAULT '',
+                valid_until TEXT DEFAULT '',
+                superseded_by TEXT DEFAULT '',
+                transaction_time TEXT DEFAULT CURRENT_TIMESTAMP,
                 PRIMARY KEY (source, target, relation, project)
             );
             """)
@@ -148,6 +152,14 @@ def init_db():
                 conn.execute("ALTER TABLE edges ADD COLUMN created_at TEXT DEFAULT '';")
             if "project" not in edge_cols:
                 conn.execute("ALTER TABLE edges ADD COLUMN project TEXT NOT NULL DEFAULT 'default';")
+            if "valid_from" not in edge_cols:
+                conn.execute("ALTER TABLE edges ADD COLUMN valid_from TEXT DEFAULT '';")
+            if "valid_until" not in edge_cols:
+                conn.execute("ALTER TABLE edges ADD COLUMN valid_until TEXT DEFAULT '';")
+            if "superseded_by" not in edge_cols:
+                conn.execute("ALTER TABLE edges ADD COLUMN superseded_by TEXT DEFAULT '';")
+            if "transaction_time" not in edge_cols:
+                conn.execute("ALTER TABLE edges ADD COLUMN transaction_time TEXT DEFAULT CURRENT_TIMESTAMP;")
 
             # Indexes for production query acceleration
             conn.execute("CREATE INDEX IF NOT EXISTS idx_nodes_project ON nodes (project, category);")
