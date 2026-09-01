@@ -10,8 +10,13 @@ import uuid
 import re
 from datetime import datetime, timezone
 from typing import Optional, List, Dict, Any
-
-from mcp.server.fastmcp import FastMCP
+try:
+    from mcp.server.fastmcp import FastMCP
+except (ImportError, ModuleNotFoundError):
+    try:
+        from mcp.server.mcpserver import MCPServer as FastMCP
+    except (ImportError, ModuleNotFoundError):
+        from mcp.server import FastMCP
 from .core import get_db
 from .utils import retry_db_lock
 from .amx import (

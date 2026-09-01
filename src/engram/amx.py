@@ -9,7 +9,10 @@ import os
 import math
 import struct
 import ctypes
-import numpy as np
+try:
+    import numpy as np
+except ImportError:
+    np = None
 from typing import List, Tuple, Optional
 
 # Load Apple Accelerate framework for direct AMX hardware dispatch

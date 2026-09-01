@@ -71,7 +71,7 @@ def main():
             except: pass
 
     start_time = time.time()
-    ops_per_agent = 100  # Rapid swarm burst
+    ops_per_agent = 200  # 7 agents * 200 ops = 1,400 concurrent operations
     total_expected = len(AGENTS) * ops_per_agent
 
     results = []
@@ -95,6 +95,36 @@ def main():
 
     print(f"\nFinal Tally: {total_success}/{total_expected} successful operations, {total_errors} errors.")
     print(get_stats())
+
+    # Forensic WAL & Database Integrity Gauntlet Check
+    print("\n--- Running Forensic Integrity & WAL Analysis ---")
+    from engram.core import get_db
+    conn = get_db()
+    try:
+        integrity = conn.execute("PRAGMA integrity_check;").fetchall()
+        quick_chk = conn.execute("PRAGMA quick_check;").fetchall()
+        fk_chk = conn.execute("PRAGMA foreign_key_check;").fetchall()
+        journal_mode = conn.execute("PRAGMA journal_mode;").fetchone()[0]
+        wal_checkpoint = conn.execute("PRAGMA wal_checkpoint(PASSIVE);").fetchall()
+        
+        node_cnt = conn.execute("SELECT COUNT(*) FROM nodes;").fetchone()[0]
+        node_fts_cnt = conn.execute("SELECT COUNT(*) FROM nodes_fts;").fetchone()[0]
+        edge_cnt = conn.execute("SELECT COUNT(*) FROM edges;").fetchone()[0]
+        vec_cnt = conn.execute("SELECT COUNT(*) FROM nodes WHERE embedding IS NOT NULL;").fetchone()[0]
+
+        print(f"PRAGMA journal_mode: {journal_mode}")
+        print(f"PRAGMA integrity_check: {integrity}")
+        print(f"PRAGMA quick_check: {quick_chk}")
+        print(f"PRAGMA foreign_key_check: {fk_chk}")
+        print(f"PRAGMA wal_checkpoint(PASSIVE): {wal_checkpoint} (busy, log pages, checkpointed pages)")
+        print(f"Table verification: {node_cnt} nodes ({vec_cnt} embedded), {node_fts_cnt} FTS indexed, {edge_cnt} graph edges.")
+        
+        for f in ["simulation_v3.sqlite", "simulation_v3.sqlite-wal", "simulation_v3.sqlite-shm"]:
+            if os.path.exists(f):
+                sz = os.path.getsize(f)
+                print(f"File: {f} -> Size: {sz} bytes")
+    finally:
+        conn.close()
 
     for f in ["simulation_v3.sqlite", "simulation_v3.sqlite-wal", "simulation_v3.sqlite-shm"]:
         if os.path.exists(f):

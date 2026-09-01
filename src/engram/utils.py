@@ -107,8 +107,11 @@ def foolproof_update_json(config_path_str: str, updater_func) -> None:
         os.remove(temp_name)
         raise e
 
+import functools
+
 def retry_db_lock(max_retries=7):
     def decorator(func):
+        @functools.wraps(func)
         def wrapper(*args, **kwargs):
             delay = 0.1
             for attempt in range(1, max_retries + 1):
