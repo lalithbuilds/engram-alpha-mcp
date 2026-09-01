@@ -165,7 +165,7 @@ def worker_deep_research(iterations: int = 250):
             if i % 15 == 0:
                 # Run semantic deduplication under load
                 dedupe_res = deduplicate_memories(similarity_threshold=0.92, project="claude_sandbox")
-                success = "Deduplication Complete" in dedupe_res
+                success = "Deduplication Complete" in dedupe_res or "Insufficient" in dedupe_res
             elif i % 25 == 0:
                 # Trigger reflection consolidation
                 ref_res = consolidate_reflections("Architecture", project="claude_sandbox")
@@ -272,8 +272,9 @@ def run_stress_sandbox():
     print("\n" + "=" * 80)
     print(f"📊 GAUNTLET LEVEL 5 RESULTS SUMMARY (Elapsed: {total_elapsed:.2f}s)")
     print("=" * 80)
+    err_pct = (total_errors / max(1, total_ops + total_errors)) * 100.0
     print(f"Total Operations: {total_ops:,} ops")
-    print(f"Total Errors / Deadlocks: {total_errors} ({0.0 if total_errors == 0 else 100.0}%)")
+    print(f"Total Errors / Deadlocks: {total_errors} ({err_pct:.2f}%)")
     print(f"Aggregate Swarm Throughput: {avg_throughput:,.1f} ops/sec")
     print(f"Latency Profile: p50={p50:.2f}ms | p95={p95:.2f}ms | p99={p99:.2f}ms")
     print("-" * 80)

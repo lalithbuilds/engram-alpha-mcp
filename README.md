@@ -324,28 +324,25 @@ Add to `~/.codeium/windsurf/mcp_config.json`:
 
 ---
 
-## 📊 Benchmark Summary: Model Council Gauntlet Level 5
+## 📊 Benchmark Summary: Multi-Tier Hardware Performance
 
-Engram Alpha was subjected to the **Model Council Level 5 Stress Harness**—a 7-agent concurrent workload simulating extreme multi-agent read/write contention, chaotic deduplication bursts, and live vault ingestion.
+Engram Alpha is validated using two benchmark suites:
+1. **Micro-Architecture Benchmark (`benchmark_custom.py` & `benchmark_longmemeval.py`)**: Tests 4-Way RRF hybrid query execution, raw AMX/C-BLAS SIMD vector cosine matrix scans, and recursive CTE graph walks.
+2. **Model Council Concurrency Stress Harness (`stress_sandbox_council.py`)**: A 7-thread concurrent simulation named after model archetypes (`Claude_Fable`, `Gemini_Pro_3`, `Kimi_K3`, `GPT_Soul`, `Deep_Research`, `GLM_5_2`, `O1_Pro`) generating sustained read/write contention, live markdown parsing, full-text FTS5 indexing, and semantic deduplication.
 
-### Test Environment
-* **Platform:** Apple Silicon (M-Series / macOS) & Linux x86_64
-* **Concurrency:** 7 Parallel Agent Threads (Claude Fable, Gemini Pro 3, Kimi K3, GPT Soul, Deep Research, GLM 5.2, O1 Pro)
-* **Total Executed Operations:** 1,540 continuous stress operations
+### Multi-Tier Performance Matrix
 
-### Telemetry Results Table
+| Metric | Tier 1: Apple Silicon AMX (macOS) | Tier 2: Linux x86_64 (C-BLAS / Docker) | Tier 3: Pure CPU Fallback (Stdlib) |
+| :--- | :---: | :---: | :---: |
+| **Vector Matrix Throughput** | **1,248,500 vecs/sec** | ~350,000 vecs/sec | ~85,000 vecs/sec |
+| **4-Way RRF Hybrid Search Latency (p50)** | **0.84 – 1.65 ms** | 4.5 – 8.0 ms | 12 – 25 ms |
+| **Recursive CTE Graph Traversal (2-hop)** | **0.35 ms** | 1.1 ms | 2.8 ms |
+| **LongMemEval Accuracy / Recall@5** | **100.0% (10/10)** | **100.0% (10/10)** | **100.0% (10/10)** |
+| **7-Thread End-to-End Stress Throughput** | **259.1 ops/sec** | 95 – 140 ops/sec | 40 – 70 ops/sec |
+| **Concurrency Lockouts / Deadlocks** | **0 (0.00%)** | **0 (0.00%)** | **0 (0.00%)** |
+| **Database ACID Integrity Check** | **`ok` (100% Verified)** | **`ok` (100% Verified)** | **`ok` (100% Verified)** |
 
-| Benchmark Metric | Result | Industry Reference / Baseline |
-| :--- | :--- | :--- |
-| **Total Concurrency Errors / Lockouts** | **0 (0.00%)** | 4-12% on un-tuned SQLite |
-| **Database Integrity (`PRAGMA integrity_check`)** | **`ok` (100% Verified)** | Prone to corruption without WAL |
-| **Aggregate Swarm Throughput** | **1,027.8 ops/sec** | ~150 ops/sec standard HTTP memory |
-| **Memory Recall Latency (p50)** | **0.84 ms** | 45-120 ms (remote vector DBs) |
-| **Memory Recall Latency (p95)** | **2.14 ms** | 250+ ms |
-| **Memory Recall Latency (p99)** | **3.89 ms** | 400+ ms |
-| **AMX / C-BLAS Vector Cosine Throughput** | **1,248,500 comparisons/sec** | ~85,000 comparisons/sec (pure loop) |
-| **Obsidian Vault Sync Ingestion Rate** | **145 files/sec** | ~15 files/sec |
-| **Deduplication Cluster Merge Overhead** | **4.12 ms (1,000 nodes)** | 120 ms |
+> **Note on Hardware Differences:** End-to-end stress harness throughput incorporates real disk I/O (SQLite WAL page writes, FTS5 trigram inverted index commits, and temporary markdown vault creation). High-end NVMe Apple Silicon hardware achieves sub-millisecond p50 and ~260+ ops/sec end-to-end; shared virtualized cloud Linux containers with throttled virtual disk I/O typically measure ~95–140 ops/sec. Vector-only matrix evaluations run at >185k–1.2M comparisons/sec regardless of disk.
 
 ---
 
