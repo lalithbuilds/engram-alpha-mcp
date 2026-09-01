@@ -11,6 +11,11 @@ import time
 from datetime import datetime, timezone
 from pathlib import Path
 
+if hasattr(sys.stdout, "reconfigure"):
+    sys.stdout.reconfigure(encoding="utf-8", errors="replace")
+if hasattr(sys.stderr, "reconfigure"):
+    sys.stderr.reconfigure(encoding="utf-8", errors="replace")
+
 # Add src to pythonpath
 src_path = Path(__file__).resolve().parent.parent / "src"
 if str(src_path) not in sys.path:
