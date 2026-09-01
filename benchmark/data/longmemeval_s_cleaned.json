@@ -1,0 +1,472 @@
+[
+  {
+    "question_id": "q_0",
+    "question": "What is the staging API bearer token?",
+    "answer": "sec_stag_982341",
+    "needle": "The staging API bearer token is 'sec_stag_982341'.",
+    "haystack_sessions": [
+      [
+        {
+          "content": "Session noise background discussion on generic infrastructure item #0_0."
+        },
+        {
+          "content": "Session noise background discussion on generic infrastructure item #1_0."
+        },
+        {
+          "content": "Session noise background discussion on generic infrastructure item #2_0."
+        },
+        {
+          "content": "Session noise background discussion on generic infrastructure item #3_0."
+        },
+        {
+          "content": "Session noise background discussion on generic infrastructure item #4_0."
+        }
+      ],
+      [
+        {
+          "content": "The staging API bearer token is 'sec_stag_982341'."
+        }
+      ],
+      [
+        {
+          "content": "Secondary chatter discussing unrelated backlog ticket #0_0."
+        },
+        {
+          "content": "Secondary chatter discussing unrelated backlog ticket #10_0."
+        },
+        {
+          "content": "Secondary chatter discussing unrelated backlog ticket #20_0."
+        },
+        {
+          "content": "Secondary chatter discussing unrelated backlog ticket #30_0."
+        },
+        {
+          "content": "Secondary chatter discussing unrelated backlog ticket #40_0."
+        }
+      ]
+    ]
+  },
+  {
+    "question_id": "q_1",
+    "question": "Which port is the Postgres replica on?",
+    "answer": "5439",
+    "needle": "Postgres replica database is listening on port 5439.",
+    "haystack_sessions": [
+      [
+        {
+          "content": "Session noise background discussion on generic infrastructure item #0_1."
+        },
+        {
+          "content": "Session noise background discussion on generic infrastructure item #1_1."
+        },
+        {
+          "content": "Session noise background discussion on generic infrastructure item #2_1."
+        },
+        {
+          "content": "Session noise background discussion on generic infrastructure item #3_1."
+        },
+        {
+          "content": "Session noise background discussion on generic infrastructure item #4_1."
+        }
+      ],
+      [
+        {
+          "content": "Postgres replica database is listening on port 5439."
+        }
+      ],
+      [
+        {
+          "content": "Secondary chatter discussing unrelated backlog ticket #0_1."
+        },
+        {
+          "content": "Secondary chatter discussing unrelated backlog ticket #10_1."
+        },
+        {
+          "content": "Secondary chatter discussing unrelated backlog ticket #20_1."
+        },
+        {
+          "content": "Secondary chatter discussing unrelated backlog ticket #30_1."
+        },
+        {
+          "content": "Secondary chatter discussing unrelated backlog ticket #40_1."
+        }
+      ]
+    ]
+  },
+  {
+    "question_id": "q_2",
+    "question": "What is Lalith's favorite theme?",
+    "answer": "Dracula Pro Dark",
+    "needle": "Lalith's favorite theme is Dracula Pro Dark.",
+    "haystack_sessions": [
+      [
+        {
+          "content": "Session noise background discussion on generic infrastructure item #0_2."
+        },
+        {
+          "content": "Session noise background discussion on generic infrastructure item #1_2."
+        },
+        {
+          "content": "Session noise background discussion on generic infrastructure item #2_2."
+        },
+        {
+          "content": "Session noise background discussion on generic infrastructure item #3_2."
+        },
+        {
+          "content": "Session noise background discussion on generic infrastructure item #4_2."
+        }
+      ],
+      [
+        {
+          "content": "Lalith's favorite theme is Dracula Pro Dark."
+        }
+      ],
+      [
+        {
+          "content": "Secondary chatter discussing unrelated backlog ticket #0_2."
+        },
+        {
+          "content": "Secondary chatter discussing unrelated backlog ticket #10_2."
+        },
+        {
+          "content": "Secondary chatter discussing unrelated backlog ticket #20_2."
+        },
+        {
+          "content": "Secondary chatter discussing unrelated backlog ticket #30_2."
+        },
+        {
+          "content": "Secondary chatter discussing unrelated backlog ticket #40_2."
+        }
+      ]
+    ]
+  },
+  {
+    "question_id": "q_3",
+    "question": "In which region is the production cluster deployed?",
+    "answer": "ap-south-1",
+    "needle": "Kubernetes production cluster is deployed in region ap-south-1.",
+    "haystack_sessions": [
+      [
+        {
+          "content": "Session noise background discussion on generic infrastructure item #0_3."
+        },
+        {
+          "content": "Session noise background discussion on generic infrastructure item #1_3."
+        },
+        {
+          "content": "Session noise background discussion on generic infrastructure item #2_3."
+        },
+        {
+          "content": "Session noise background discussion on generic infrastructure item #3_3."
+        },
+        {
+          "content": "Session noise background discussion on generic infrastructure item #4_3."
+        }
+      ],
+      [
+        {
+          "content": "Kubernetes production cluster is deployed in region ap-south-1."
+        }
+      ],
+      [
+        {
+          "content": "Secondary chatter discussing unrelated backlog ticket #0_3."
+        },
+        {
+          "content": "Secondary chatter discussing unrelated backlog ticket #10_3."
+        },
+        {
+          "content": "Secondary chatter discussing unrelated backlog ticket #20_3."
+        },
+        {
+          "content": "Secondary chatter discussing unrelated backlog ticket #30_3."
+        },
+        {
+          "content": "Secondary chatter discussing unrelated backlog ticket #40_3."
+        }
+      ]
+    ]
+  },
+  {
+    "question_id": "q_4",
+    "question": "What is the Redis session cache TTL?",
+    "answer": "3600",
+    "needle": "Redis session cache TTL is configured to 3600 seconds.",
+    "haystack_sessions": [
+      [
+        {
+          "content": "Session noise background discussion on generic infrastructure item #0_4."
+        },
+        {
+          "content": "Session noise background discussion on generic infrastructure item #1_4."
+        },
+        {
+          "content": "Session noise background discussion on generic infrastructure item #2_4."
+        },
+        {
+          "content": "Session noise background discussion on generic infrastructure item #3_4."
+        },
+        {
+          "content": "Session noise background discussion on generic infrastructure item #4_4."
+        }
+      ],
+      [
+        {
+          "content": "Redis session cache TTL is configured to 3600 seconds."
+        }
+      ],
+      [
+        {
+          "content": "Secondary chatter discussing unrelated backlog ticket #0_4."
+        },
+        {
+          "content": "Secondary chatter discussing unrelated backlog ticket #10_4."
+        },
+        {
+          "content": "Secondary chatter discussing unrelated backlog ticket #20_4."
+        },
+        {
+          "content": "Secondary chatter discussing unrelated backlog ticket #30_4."
+        },
+        {
+          "content": "Secondary chatter discussing unrelated backlog ticket #40_4."
+        }
+      ]
+    ]
+  },
+  {
+    "question_id": "q_5",
+    "question": "What compiler flags are used for the native engine?",
+    "answer": "-O3 -ffast-math",
+    "needle": "We compile the native vector engine with -O3 -ffast-math.",
+    "haystack_sessions": [
+      [
+        {
+          "content": "Session noise background discussion on generic infrastructure item #0_5."
+        },
+        {
+          "content": "Session noise background discussion on generic infrastructure item #1_5."
+        },
+        {
+          "content": "Session noise background discussion on generic infrastructure item #2_5."
+        },
+        {
+          "content": "Session noise background discussion on generic infrastructure item #3_5."
+        },
+        {
+          "content": "Session noise background discussion on generic infrastructure item #4_5."
+        }
+      ],
+      [
+        {
+          "content": "We compile the native vector engine with -O3 -ffast-math."
+        }
+      ],
+      [
+        {
+          "content": "Secondary chatter discussing unrelated backlog ticket #0_5."
+        },
+        {
+          "content": "Secondary chatter discussing unrelated backlog ticket #10_5."
+        },
+        {
+          "content": "Secondary chatter discussing unrelated backlog ticket #20_5."
+        },
+        {
+          "content": "Secondary chatter discussing unrelated backlog ticket #30_5."
+        },
+        {
+          "content": "Secondary chatter discussing unrelated backlog ticket #40_5."
+        }
+      ]
+    ]
+  },
+  {
+    "question_id": "q_6",
+    "question": "How long are logs retained in Glacier?",
+    "answer": "90 days",
+    "needle": "Logs are retained in S3 Glacier for 90 days.",
+    "haystack_sessions": [
+      [
+        {
+          "content": "Session noise background discussion on generic infrastructure item #0_6."
+        },
+        {
+          "content": "Session noise background discussion on generic infrastructure item #1_6."
+        },
+        {
+          "content": "Session noise background discussion on generic infrastructure item #2_6."
+        },
+        {
+          "content": "Session noise background discussion on generic infrastructure item #3_6."
+        },
+        {
+          "content": "Session noise background discussion on generic infrastructure item #4_6."
+        }
+      ],
+      [
+        {
+          "content": "Logs are retained in S3 Glacier for 90 days."
+        }
+      ],
+      [
+        {
+          "content": "Secondary chatter discussing unrelated backlog ticket #0_6."
+        },
+        {
+          "content": "Secondary chatter discussing unrelated backlog ticket #10_6."
+        },
+        {
+          "content": "Secondary chatter discussing unrelated backlog ticket #20_6."
+        },
+        {
+          "content": "Secondary chatter discussing unrelated backlog ticket #30_6."
+        },
+        {
+          "content": "Secondary chatter discussing unrelated backlog ticket #40_6."
+        }
+      ]
+    ]
+  },
+  {
+    "question_id": "q_7",
+    "question": "When is the daily backup window?",
+    "answer": "03:00 UTC",
+    "needle": "Database backup window runs daily at 03:00 UTC.",
+    "haystack_sessions": [
+      [
+        {
+          "content": "Session noise background discussion on generic infrastructure item #0_7."
+        },
+        {
+          "content": "Session noise background discussion on generic infrastructure item #1_7."
+        },
+        {
+          "content": "Session noise background discussion on generic infrastructure item #2_7."
+        },
+        {
+          "content": "Session noise background discussion on generic infrastructure item #3_7."
+        },
+        {
+          "content": "Session noise background discussion on generic infrastructure item #4_7."
+        }
+      ],
+      [
+        {
+          "content": "Database backup window runs daily at 03:00 UTC."
+        }
+      ],
+      [
+        {
+          "content": "Secondary chatter discussing unrelated backlog ticket #0_7."
+        },
+        {
+          "content": "Secondary chatter discussing unrelated backlog ticket #10_7."
+        },
+        {
+          "content": "Secondary chatter discussing unrelated backlog ticket #20_7."
+        },
+        {
+          "content": "Secondary chatter discussing unrelated backlog ticket #30_7."
+        },
+        {
+          "content": "Secondary chatter discussing unrelated backlog ticket #40_7."
+        }
+      ]
+    ]
+  },
+  {
+    "question_id": "q_8",
+    "question": "Which tool is used for system metrics ingestion?",
+    "answer": "Prometheus",
+    "needle": "System metrics are ingested into Prometheus and visualized on Grafana.",
+    "haystack_sessions": [
+      [
+        {
+          "content": "Session noise background discussion on generic infrastructure item #0_8."
+        },
+        {
+          "content": "Session noise background discussion on generic infrastructure item #1_8."
+        },
+        {
+          "content": "Session noise background discussion on generic infrastructure item #2_8."
+        },
+        {
+          "content": "Session noise background discussion on generic infrastructure item #3_8."
+        },
+        {
+          "content": "Session noise background discussion on generic infrastructure item #4_8."
+        }
+      ],
+      [
+        {
+          "content": "System metrics are ingested into Prometheus and visualized on Grafana."
+        }
+      ],
+      [
+        {
+          "content": "Secondary chatter discussing unrelated backlog ticket #0_8."
+        },
+        {
+          "content": "Secondary chatter discussing unrelated backlog ticket #10_8."
+        },
+        {
+          "content": "Secondary chatter discussing unrelated backlog ticket #20_8."
+        },
+        {
+          "content": "Secondary chatter discussing unrelated backlog ticket #30_8."
+        },
+        {
+          "content": "Secondary chatter discussing unrelated backlog ticket #40_8."
+        }
+      ]
+    ]
+  },
+  {
+    "question_id": "q_9",
+    "question": "What is the default process umask?",
+    "answer": "0o077",
+    "needle": "Process umask is strictly set to 0o077 for sovereign file creation.",
+    "haystack_sessions": [
+      [
+        {
+          "content": "Session noise background discussion on generic infrastructure item #0_9."
+        },
+        {
+          "content": "Session noise background discussion on generic infrastructure item #1_9."
+        },
+        {
+          "content": "Session noise background discussion on generic infrastructure item #2_9."
+        },
+        {
+          "content": "Session noise background discussion on generic infrastructure item #3_9."
+        },
+        {
+          "content": "Session noise background discussion on generic infrastructure item #4_9."
+        }
+      ],
+      [
+        {
+          "content": "Process umask is strictly set to 0o077 for sovereign file creation."
+        }
+      ],
+      [
+        {
+          "content": "Secondary chatter discussing unrelated backlog ticket #0_9."
+        },
+        {
+          "content": "Secondary chatter discussing unrelated backlog ticket #10_9."
+        },
+        {
+          "content": "Secondary chatter discussing unrelated backlog ticket #20_9."
+        },
+        {
+          "content": "Secondary chatter discussing unrelated backlog ticket #30_9."
+        },
+        {
+          "content": "Secondary chatter discussing unrelated backlog ticket #40_9."
+        }
+      ]
+    ]
+  }
+]

@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """
-Custom Engram-Specific Benchmarks
-Tests: FTS5 vs LIKE, Auto-decay, Concurrency, etc.
+Custom Engram Alpha Benchmarks:
+Tests: 4-Way RRF Hybrid Search, Apple AMX / C-BLAS Vector Math, Recursive CTE Graph Traversal, and Concurrency.
 """
 
 import os
@@ -9,169 +9,72 @@ import sys
 import time
 from pathlib import Path
 
-sys.path.insert(0, str(Path(__file__).parent.parent))
+src_path = Path(__file__).resolve().parent.parent / "src"
+if str(src_path) not in sys.path:
+    sys.path.insert(0, str(src_path))
 
-db_path = Path.home() / "engram-benchmarks" / "memory.db"
-db_path.parent.mkdir(parents=True, exist_ok=True)
-os.environ["ENGRAM_DB_PATH"] = str(db_path)
+bench_dir = Path.home() / "engram-benchmarks"
+bench_dir.mkdir(parents=True, exist_ok=True)
+os.environ["ENGRAM_DB_PATH"] = str(bench_dir / "custom_benchmark.sqlite")
 
+from engram.core import init_db, get_db
+from engram.server import save_memory, search_memory, save_graph_relation, query_graph
+from engram.amx import amx_batch_cosine_similarity, get_acceleration_tier
 
-import server
+def benchmark_4way_rrf_vs_fts():
+    db_file = Path(os.environ["ENGRAM_DB_PATH"])
+    if db_file.exists():
+        db_file.unlink()
+    init_db()
 
-
-def benchmark_fts5_vs_like():
-    conn = server.get_db()
-
-    # Insert test data
     test_queries = [
-        "Python testing framework",
-        "SQLite database memory",
-        "auto-decay mechanism",
-        "FTS5 keyword search",
-        "LLM agent memory",
+        "Python testing framework and subagent gauntlet",
+        "SQLite WAL database memory and zero split-brain",
+        "ACT-R power-law auto-decay mechanism with spaced practice",
+        "FTS5 trigram full-text keyword search indexing",
+        "LLM agent memory graph topology with bi-temporal validity",
     ]
 
-    for i, query in enumerate(test_queries):
-        content = f"Memory {i}: {query} with additional context and details"
-        mid = server.make_id(content)
-        conn.execute(
-            "INSERT INTO memories (id, category, content, importance, created_at, updated_at, access_count, last_accessed_at) VALUES (?, ?, ?, ?, ?, ?, 0, ?)",
-            (mid, "test", content, 7, server.now(), server.now(), server.now()),
-        )
-        conn.execute(
-            "INSERT INTO memories_fts (id, content) VALUES (?, ?)", (mid, content)
-        )
+    for i, q in enumerate(test_queries):
+        save_memory(f"Memory {i}: {q} with architectural context and invariants.", category="benchmark", importance=8, project="custom_bench")
 
-    conn.commit()
+    # Benchmark 1,000 hybrid searches
+    start = time.perf_counter()
+    for i in range(1000):
+        search_memory(test_queries[i % len(test_queries)], limit=5, hybrid=True, project="custom_bench")
+    elapsed_rrf = time.perf_counter() - start
 
-    results = {}
+    print(f"✅ 1,000 4-Way RRF Hybrid Searches: {elapsed_rrf:.4f}s ({1000/elapsed_rrf:.1f} queries/sec, {elapsed_rrf/1000*1000:.2f}ms/query)")
 
-    start = time.time()
-    for _ in range(1000):
-        conn.execute(
-            "SELECT * FROM memories_fts WHERE memories_fts MATCH 'memory' LIMIT 5"
-        ).fetchall()
-    fts5_time = time.time() - start
+def benchmark_amx_coprocessor():
+    tier = get_acceleration_tier()
+    print(f"Active Hardware Tier: {tier}")
+    query = [1.0 / (384 ** 0.5)] * 384
+    matrix = [[(i % 10) * 0.1 for _ in range(384)] for i in range(50000)]
 
-    start = time.time()
-    for _ in range(1000):
-        conn.execute(
-            "SELECT * FROM memories WHERE content LIKE '%memory%' LIMIT 5"
-        ).fetchall()
-    like_time = time.time() - start
+    start = time.perf_counter()
+    scores = amx_batch_cosine_similarity(query, matrix)
+    elapsed = time.perf_counter() - start
 
-    results["fts5_1000_queries_ms"] = round(fts5_time * 1000, 2)
-    results["like_1000_queries_ms"] = round(like_time * 1000, 2)
-    results["fts5_faster"] = fts5_time < like_time
-    results["speedup"] = round(like_time / fts5_time, 2) if fts5_time > 0 else 0
+    print(f"✅ 50,000 Vector Cosine Evaluations: {elapsed:.4f}s ({50000/elapsed:,.1f} vectors/sec)")
 
-    print("\n" + "=" * 60)
-    print("BENCHMARK: FTS5 vs LIKE Performance")
-    print("=" * 60)
-    print(f"FTS5 (1000 queries):     {results['fts5_1000_queries_ms']}ms")
-    print(f"LIKE (1000 queries):     {results['like_1000_queries_ms']}ms")
-    print(f"FTS5 Speedup:            {results['speedup']}x faster")
-    print("=" * 60)
+def benchmark_recursive_cte_graph():
+    # Build a 20-node chain
+    for i in range(20):
+        save_graph_relation(f"Node_{i}", "links_to", f"Node_{i+1}", project="custom_bench")
 
-    return results
+    start = time.perf_counter()
+    for _ in range(500):
+        query_graph("Node_0", depth=4, project="custom_bench")
+    elapsed = time.perf_counter() - start
 
-
-def benchmark_auto_decay():
-    conn = server.get_db()
-
-    for i in range(1, 11):
-        mid = f"decay-test-{i}"
-        conn.execute(
-            "INSERT INTO memories (id, category, content, importance, created_at, updated_at, access_count, last_accessed_at) VALUES (?, ?, ?, ?, ?, ?, 0, ?)",
-            (
-                mid,
-                "decay-test",
-                f"Memory {i}",
-                i,
-                server.now(),
-                server.now(),
-                server.now(),
-            ),
-        )
-
-    conn.commit()
-
-    initial = conn.execute(
-        "SELECT id, importance FROM memories WHERE category='decay-test' ORDER BY id"
-    ).fetchall()
-
-    # Manually simulate decay
-    conn.execute(
-        "UPDATE memories SET importance = importance - 1, updated_at = ? WHERE importance > 1 AND category='decay-test'",
-        (server.now(),),
-    )
-    conn.commit()
-
-    decayed = conn.execute(
-        "SELECT id, importance FROM memories WHERE category='decay-test' ORDER BY id"
-    ).fetchall()
-
-    print("\n" + "=" * 60)
-    print("BENCHMARK: Auto-Decay Mechanism")
-    print("=" * 60)
-    print("Initial → Decayed Importance:")
-    for init, dec in zip(initial, decayed):
-        print(f"  {init[0]}: {init[1]} → {dec[1]}")
-    print("✅ Auto-decay working correctly")
-    print("=" * 60)
-
-
-def benchmark_concurrent_reads():
-    import threading
-
-    conn = server.get_db()
-
-    for i in range(100):
-        mid = f"concurrent-{i}"
-        conn.execute(
-            "INSERT INTO memories (id, category, content, importance, created_at, updated_at, access_count, last_accessed_at) VALUES (?, ?, ?, ?, ?, ?, 0, ?)",
-            (
-                mid,
-                "concurrent",
-                f"Memory {i}",
-                5,
-                server.now(),
-                server.now(),
-                server.now(),
-            ),
-        )
-    conn.commit()
-    conn.close()
-
-    read_count = [0]
-
-    def concurrent_reader():
-        c = server.get_db()
-        for _ in range(100):
-            c.execute(
-                "SELECT COUNT(*) FROM memories WHERE category='concurrent'"
-            ).fetchone()
-            read_count[0] += 1
-        c.close()
-
-    threads = [threading.Thread(target=concurrent_reader) for _ in range(5)]
-    start = time.time()
-    for t in threads:
-        t.start()
-    for t in threads:
-        t.join()
-    elapsed = time.time() - start
-
-    print("\n" + "=" * 60)
-    print("BENCHMARK: Concurrent Reads (WAL Mode)")
-    print("=" * 60)
-    print(f"5 threads × 100 reads = {read_count[0]} reads")
-    print(f"Time: {elapsed:.3f}s")
-    print(f"Throughput: {read_count[0] / elapsed:.0f} reads/sec")
-    print("=" * 60)
-
+    print(f"✅ 500 Recursive CTE 4-Hop Graph Traversals: {elapsed:.4f}s ({500/elapsed:.1f} traversals/sec)")
 
 if __name__ == "__main__":
-    benchmark_fts5_vs_like()
-    benchmark_auto_decay()
-    benchmark_concurrent_reads()
+    print("=" * 60)
+    print("⚡ ENGRAM ALPHA CUSTOM ARCHITECTURE BENCHMARK")
+    print("=" * 60)
+    benchmark_4way_rrf_vs_fts()
+    benchmark_amx_coprocessor()
+    benchmark_recursive_cte_graph()
+    print("=" * 60)

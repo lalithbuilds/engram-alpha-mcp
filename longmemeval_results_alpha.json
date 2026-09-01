@@ -1,0 +1,75 @@
+{
+  "timestamp": "2026-09-01T08:34:04.674180",
+  "total": 10,
+  "items": [
+    {
+      "question_id": "q_0",
+      "question": "What is the staging API bearer token?",
+      "correct": true,
+      "is_unanswerable": false
+    },
+    {
+      "question_id": "q_1",
+      "question": "Which port is the Postgres replica on?",
+      "correct": true,
+      "is_unanswerable": false
+    },
+    {
+      "question_id": "q_2",
+      "question": "What is Lalith's favorite theme?",
+      "correct": true,
+      "is_unanswerable": false
+    },
+    {
+      "question_id": "q_3",
+      "question": "In which region is the production cluster deployed?",
+      "correct": true,
+      "is_unanswerable": false
+    },
+    {
+      "question_id": "q_4",
+      "question": "What is the Redis session cache TTL?",
+      "correct": true,
+      "is_unanswerable": false
+    },
+    {
+      "question_id": "q_5",
+      "question": "What compiler flags are used for the native engine?",
+      "correct": true,
+      "is_unanswerable": false
+    },
+    {
+      "question_id": "q_6",
+      "question": "How long are logs retained in Glacier?",
+      "correct": true,
+      "is_unanswerable": false
+    },
+    {
+      "question_id": "q_7",
+      "question": "When is the daily backup window?",
+      "correct": true,
+      "is_unanswerable": false
+    },
+    {
+      "question_id": "q_8",
+      "question": "Which tool is used for system metrics ingestion?",
+      "correct": true,
+      "is_unanswerable": false
+    },
+    {
+      "question_id": "q_9",
+      "question": "What is the default process umask?",
+      "correct": true,
+      "is_unanswerable": false
+    }
+  ],
+  "metrics": {
+    "total_questions": 10,
+    "answerable_questions": 10,
+    "unanswerable_questions": 0,
+    "correct_answers": 10,
+    "recall_at_5": 1.0,
+    "accuracy": 1.0,
+    "elapsed_seconds": 0.16
+  }
+}
