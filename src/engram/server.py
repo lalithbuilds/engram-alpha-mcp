@@ -40,8 +40,15 @@ from .ingest import ingest_obsidian_vault
 mcp = FastMCP("Engram Alpha MCP")
 
 def escape_fts(text: str) -> str:
-    """Strip special FTS5 characters to prevent syntax errors on any platform."""
-    return re.sub(r"[^\w\s]", " ", text).strip()
+    """
+    Safely escape FTS5 metacharacters while preserving code symbols
+    like std::vector<int>, config.json, snake_case, and kebab-case identifiers.
+    """
+    if not text:
+        return ""
+    clean = text.replace('"', '""')
+    clean = "".join(ch for ch in clean if ord(ch) >= 32 or ch in ('\n', '\t'))
+    return clean.strip()
 
 @retry_db_lock(max_retries=7)
 def _save_node(
@@ -56,10 +63,14 @@ def _save_node(
     node_id = str(uuid.uuid4())
     now = datetime.now(timezone.utc).isoformat()
     
-    clean_words = set(w.lower() for w in escape_fts(content).split() if len(w) > 2)
+    # Input validation and clamping
+    content_clamped = str(content)[:100000] # max 100KB
+    imp_clamped = max(1, min(10, int(importance)))
+    
+    clean_words = set(w.lower() for w in escape_fts(content_clamped).split() if len(w) > 2)
     warnings = []
     
-    dense_vec = generate_dense_embedding(content)
+    dense_vec = generate_dense_embedding(content_clamped)
     packed_vec = pack_vector(dense_vec)
     
     conn.execute("BEGIN IMMEDIATE;")
@@ -90,7 +101,7 @@ def _save_node(
             INSERT INTO nodes (id, type, content, created_at, updated_at, access_count, last_accessed_at, embedding, importance, category, project, agent)
             VALUES (?, ?, ?, ?, ?, 0, '', ?, ?, ?, ?, ?)
             """,
-            (node_id, node_type, content, now, now, packed_vec, importance, category, project, agent),
+            (node_id, node_type, content_clamped, now, now, packed_vec, imp_clamped, category, project, agent),
         )
         conn.commit()
     except Exception as e:
@@ -128,6 +139,7 @@ def search_memory(
     Search memory using 4-Way Reciprocal Rank Fusion (RRF):
     Fuses Dense Vector Cosine Similarity + Trigram FTS5 Lexical + Graph Spreading Activation + ACT-R Decay.
     """
+    limit_clamped = max(1, min(100, int(limit)))
     conn = get_db()
     safe_query = escape_fts(query)
     if not safe_query:
@@ -135,10 +147,11 @@ def search_memory(
         return "Invalid query."
 
     try:
-        # 1. Lexical Candidate Retrieval via Trigram FTS5
-        fts_query = f'"{safe_query}"'
+        # 1. Lexical Candidate Retrieval via Multi-Word FTS5
+        words = [w.replace('"', '""') for w in safe_query.split() if len(w) > 1]
+        fts_query = " OR ".join(f'"{w}"' for w in words[:8]) if words else f'"{safe_query}"'
         project_filter = "AND n.project = ?" if project else ""
-        params = [fts_query] + ([project] if project else []) + [limit * 4]
+        params = [fts_query] + ([project] if project else []) + [limit_clamped * 4]
 
         sql_fts = f"""
         SELECT n.id, n.content, n.created_at, n.last_accessed_at, n.embedding, rank, n.importance, n.project
@@ -161,12 +174,13 @@ def search_memory(
                 extra_filter += " AND project = ?"
                 extra_params.append(project)
 
-            # Evaluate all active nodes in namespace without artificial recency windowing
+            # Cap vector candidate retrieval to 5,000 nodes to preserve sub-second latency on large tables
             extra_rows = conn.execute(
                 f"""
                 SELECT id, content, created_at, last_accessed_at, embedding, 0.0 as rank, importance, project
                 FROM nodes
                 {extra_filter}
+                LIMIT 5000
                 """,
                 extra_params,
             ).fetchall()
@@ -696,15 +710,16 @@ def edit_memory(
 @mcp.tool()
 @retry_db_lock(max_retries=7)
 def delete_memory(id: str) -> str:
-    """Delete a memory node and its associated knowledge graph edges by ID."""
+    """Delete a memory node and cascade-delete all its associated knowledge graph edges by ID."""
     conn = get_db()
     conn.execute("BEGIN IMMEDIATE;")
     try:
+        conn.execute("DELETE FROM edges WHERE source = ? OR target = ?", (id, id))
         cur = conn.execute("DELETE FROM nodes WHERE id = ?", (id,))
         if cur.rowcount == 0:
             return f"Error: Memory with ID '{id}' not found."
         conn.commit()
-        return f"Successfully deleted Node {id}."
+        return f"Successfully deleted Node {id} and cascaded associated graph edges."
     except Exception as e:
         conn.rollback()
         raise e

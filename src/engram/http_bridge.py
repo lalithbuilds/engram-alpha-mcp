@@ -10,7 +10,7 @@ import sys
 import os
 import json
 import urllib.parse
-from http.server import HTTPServer, BaseHTTPRequestHandler
+from http.server import ThreadingHTTPServer, BaseHTTPRequestHandler
 from typing import Dict, Any
 
 from .server import (
@@ -329,10 +329,11 @@ class EngramHTTPHandler(BaseHTTPRequestHandler):
             self.wfile.write(json.dumps({"error": f"POST path '{path}' not recognized."}).encode("utf-8"))
 
 def start_http_gateway(host: str = "0.0.0.0", port: int = 8000):
-    """Start the universal Engram Alpha HTTP & Web Agent Gateway."""
-    server = HTTPServer((host, port), EngramHTTPHandler)
+    """Start the universal Engram Alpha Threaded HTTP & Web Agent Gateway."""
+    server = ThreadingHTTPServer((host, port), EngramHTTPHandler)
+    server.daemon_threads = True
     print("=" * 70)
-    print(f"🌐 Engram Alpha Universal Web & REST Gateway Active")
+    print(f"🌐 Engram Alpha Universal Web & REST Gateway Active (Threaded)")
     print(f"📍 Listening on: http://{host}:{port}")
     print(f"📊 Web Dashboard: http://localhost:{port}/dashboard")
     print(f"📖 OpenAPI 3.0 Specification: http://localhost:{port}/openapi.json")

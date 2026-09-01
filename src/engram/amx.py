@@ -95,6 +95,8 @@ def get_acceleration_tier() -> str:
     else:
         return "Tier 3: Pure Python Standard Library (Zero-Dependency Universal)"
 
+EMBEDDING_DIM = int(os.environ.get("ENGRAM_EMBEDDING_DIM", "384"))
+
 def is_amx_hardware_available() -> bool:
     """Check if native C-level hardware coprocessor/BLAS acceleration is available."""
     return _cblas_sdot is not None
@@ -103,19 +105,19 @@ def pack_vector(vec: List[float]) -> bytes:
     """Pack float array into compact binary blob (Cross-Platform IEEE 754 float32)."""
     return struct.pack(f"{len(vec)}f", *vec)
 
-def unpack_vector(blob: bytes) -> List[float]:
+def unpack_vector(blob: bytes, dim: int = EMBEDDING_DIM) -> List[float]:
     """Unpack compact binary blob to float array safely with corrupted buffer protection."""
     if not blob:
-        return [0.0] * 384
+        return [0.0] * dim
     try:
         valid_len = (len(blob) // 4) * 4
         count = valid_len // 4
         if count == 0:
-            return [0.0] * 384
+            return [0.0] * dim
         unpacked = list(struct.unpack(f"{count}f", blob[:valid_len]))
         return [0.0 if (math.isnan(x) or math.isinf(x)) else x for x in unpacked]
     except Exception:
-        return [0.0] * 384
+        return [0.0] * dim
 
 def compute_similarity_pure_python(vec_a: List[float], vec_b: List[float]) -> float:
     """Tier 3: Pure Python float arithmetic (runs on any OS, micro-controller, or Docker container)."""
@@ -222,11 +224,11 @@ def get_embedding_model():
                     _FASTEMBED_PROBED = True
     return _EMBEDDING_MODEL
 
-def generate_dense_embedding(text: str, dim: int = 384) -> List[float]:
+def generate_dense_embedding(text: str, dim: int = EMBEDDING_DIM) -> List[float]:
     """
-    Generates a high-precision 384-dimensional dense semantic vector on any OS.
+    Generates a high-precision dense semantic vector on any OS.
     Uses cached BAAI/bge-small-en-v1.5 neural model if available (10-50ms CPU / sub-ms SIMD),
-    or deterministic 384d semantic hypersphere projection as zero-dependency fallback.
+    or deterministic semantic hypersphere projection as zero-dependency fallback.
     """
     model = get_embedding_model()
     if model is not None:
@@ -237,7 +239,7 @@ def generate_dense_embedding(text: str, dim: int = 384) -> List[float]:
             pass
 
     # Universal Deterministic High-Dimensional Hashed Semantic Projection
-    # Distributes word n-grams uniformly across 384-dimensional hypersphere
+    # Distributes word n-grams uniformly across configurable hypersphere
     import hashlib
     vec = [0.0] * dim
     words = text.lower().split()
@@ -263,7 +265,7 @@ def generate_dense_embedding(text: str, dim: int = 384) -> List[float]:
         vec = [x / norm for x in vec]
     return vec
 
-def generate_dense_embeddings_batch(texts: List[str], dim: int = 384) -> List[List[float]]:
+def generate_dense_embeddings_batch(texts: List[str], dim: int = EMBEDDING_DIM) -> List[List[float]]:
     """
     High-throughput vectorized batch embedding generation.
     Passes multiple text inputs in a single SIMD inference pass.
