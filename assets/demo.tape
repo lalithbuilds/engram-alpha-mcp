@@ -5,32 +5,30 @@ Set Height 450
 Set Padding 40
 Set WindowBar Colorful
 Set Margin 20
-Set MarginFill "#1a1b26" 
+Set MarginFill "#282a36" 
 Set BorderRadius 12
 Set FontFamily "Fira Code"
-Set Theme "TokyoNight"
+Set Theme "Dracula"
 Set TypingSpeed 40ms
 
 Hide
-Type "python3 -c 'import engram'" Enter
-Type "alias engram='python3 src/engram/cli.py'" Enter
-Type "rm -f engram.sqlite*" Enter
-Type "export ENGRAM_DB_PATH=engram.sqlite" Enter
+Type "alias engram='python3 engram.py'" Enter
+Type "rm -f memory.db*" Enter
 Type "clear" Enter
 Show
 
 Sleep 500ms
-Type "engram save 'Core system architecture initialized. WAL mode active.' --importance 10"
+Type "engram save 'Deployed the new caching layer using Redis' -c devops"
 Sleep 200ms
 Enter
 Sleep 1s
 
-Type "engram save 'API keys loaded into encrypted environment.' --category sec"
+Type "engram save 'Redis connection string is in AWS Secrets Manager'"
 Sleep 200ms
 Enter
 Sleep 1s
 
-Type "engram search 'architecture'"
+Type "engram search 'Redis'"
 Sleep 200ms
 Enter
 Sleep 2s

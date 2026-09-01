@@ -566,6 +566,148 @@ def checkpoint_db() -> str:
 
 @mcp.tool()
 @retry_db_lock(max_retries=7)
+def auto_context(limit: int = 5, min_importance: int = 7, project: Optional[str] = None) -> str:
+    """
+    Auto-Context Boot Tool for Agents:
+    Recalls top high-importance active memories formatted in XML for session initialization.
+    """
+    conn = get_db()
+    try:
+        proj_filter = "AND project = ?" if project else ""
+        params = [min_importance] + ([project] if project else []) + [limit]
+        rows = conn.execute(
+            f"""
+            SELECT id, category, content, importance, project, created_at
+            FROM nodes
+            WHERE importance >= ? {proj_filter}
+            ORDER BY importance DESC, access_count DESC, created_at DESC
+            LIMIT ?
+            """,
+            params,
+        ).fetchall()
+
+        if not rows:
+            return "<engram_context count='0'>No high-importance context found.</engram_context>"
+
+        xml_entries = []
+        ids_to_bump = []
+        now_iso = datetime.now(timezone.utc).isoformat()
+        for r in rows:
+            node_id, cat, content, imp, proj, created = r
+            ids_to_bump.append(node_id)
+            xml_entries.append(
+                f'  <memory id="{node_id}" category="{cat}" importance="{imp}" project="{proj}">\n'
+                f"    {content}\n"
+                f"  </memory>"
+            )
+
+        if ids_to_bump:
+            placeholders = ",".join("?" for _ in ids_to_bump)
+            conn.execute(
+                f"UPDATE nodes SET access_count = access_count + 1, last_accessed_at = ? WHERE id IN ({placeholders})",
+                [now_iso] + ids_to_bump,
+            )
+            conn.commit()
+
+        body = "\n".join(xml_entries)
+        return f"<engram_context count='{len(rows)}'>\n{body}\n</engram_context>"
+    finally:
+        conn.close()
+
+@mcp.tool()
+@retry_db_lock(max_retries=7)
+def edit_memory(
+    id: str,
+    content: Optional[str] = None,
+    importance: Optional[int] = None,
+    category: Optional[str] = None,
+) -> str:
+    """Edit an existing memory's content, importance, or category by its node ID."""
+    conn = get_db()
+    conn.execute("BEGIN IMMEDIATE;")
+    try:
+        row = conn.execute("SELECT id, content, importance, category FROM nodes WHERE id = ?", (id,)).fetchone()
+        if not row:
+            return f"Error: Memory with ID '{id}' not found."
+
+        new_content = content if content is not None else row[1]
+        new_imp = importance if importance is not None else row[2]
+        new_cat = category if category is not None else row[3]
+        now_iso = datetime.now(timezone.utc).isoformat()
+
+        dense_vec = generate_dense_embedding(new_content)
+        packed_vec = pack_vector(dense_vec)
+
+        conn.execute(
+            """
+            UPDATE nodes
+            SET content = ?, importance = ?, category = ?, embedding = ?, updated_at = ?
+            WHERE id = ?
+            """,
+            (new_content, new_imp, new_cat, packed_vec, now_iso, id),
+        )
+        conn.commit()
+        return f"Successfully updated Node {id} (Importance: {new_imp}, Category: {new_cat})."
+    except Exception as e:
+        conn.rollback()
+        raise e
+    finally:
+        conn.close()
+
+@mcp.tool()
+@retry_db_lock(max_retries=7)
+def delete_memory(id: str) -> str:
+    """Delete a memory node and its associated knowledge graph edges by ID."""
+    conn = get_db()
+    conn.execute("BEGIN IMMEDIATE;")
+    try:
+        cur = conn.execute("DELETE FROM nodes WHERE id = ?", (id,))
+        if cur.rowcount == 0:
+            return f"Error: Memory with ID '{id}' not found."
+        conn.commit()
+        return f"Successfully deleted Node {id}."
+    except Exception as e:
+        conn.rollback()
+        raise e
+    finally:
+        conn.close()
+
+@mcp.tool()
+@retry_db_lock(max_retries=7)
+def list_memories(limit: int = 50, project: Optional[str] = None) -> str:
+    """List recent memory nodes in the database, ordered by importance and recency."""
+    conn = get_db()
+    try:
+        proj_filter = "WHERE project = ?" if project else ""
+        params = [project] if project else []
+        params.append(limit)
+
+        rows = conn.execute(
+            f"""
+            SELECT id, category, importance, project, created_at, content
+            FROM nodes
+            {proj_filter}
+            ORDER BY importance DESC, created_at DESC
+            LIMIT ?
+            """,
+            params,
+        ).fetchall()
+
+        if not rows:
+            return "Memory bank is empty."
+
+        lines = [f"{'ID':<14} {'CAT':<12} {'IMP':<5} {'PROJ':<12} {'DATE':<12} CONTENT", "-" * 80]
+        for r in rows:
+            node_id, cat, imp, proj, created, content = r
+            preview = content[:45].replace("\n", " ")
+            lines.append(f"{node_id:<14} {cat:<12} {imp:<5} {proj:<12} {created[:10]:<12} {preview}")
+
+        return "\n".join(lines)
+    finally:
+        conn.close()
+
+@mcp.tool()
+@retry_db_lock(max_retries=7)
 def get_stats() -> str:
     """Get system statistics, knowledge graph counts, and active hardware acceleration tier."""
     conn = get_db()
