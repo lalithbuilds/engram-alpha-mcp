@@ -22,7 +22,26 @@ except (ImportError, ModuleNotFoundError):
     try:
         from mcp.server.mcpserver import MCPServer as FastMCP
     except (ImportError, ModuleNotFoundError):
-        from mcp.server import FastMCP
+        try:
+            from mcp.server import FastMCP
+        except (ImportError, ModuleNotFoundError):
+            class FastMCP:
+                def __init__(self, *args, **kwargs):
+                    pass
+                def tool(self, *args, **kwargs):
+                    def decorator(fn):
+                        return fn
+                    return decorator
+                def resource(self, *args, **kwargs):
+                    def decorator(fn):
+                        return fn
+                    return decorator
+                def prompt(self, *args, **kwargs):
+                    def decorator(fn):
+                        return fn
+                    return decorator
+                def run(self, *args, **kwargs):
+                    pass
 
 from .core import get_db, optimize_and_checkpoint
 from .utils import retry_db_lock
