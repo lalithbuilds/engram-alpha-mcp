@@ -171,7 +171,8 @@ def search_memory(
 
     try:
         # 1. Lexical Candidate Retrieval via Multi-Word FTS5
-        words = [w.replace('"', '""') for w in safe_query.split() if len(w) > 1]
+        words = [w.replace('"', '""') for w in safe_query.split() if len(w) >= 3]
+
         fts_query = " OR ".join(f'"{w}"' for w in words[:8]) if words else f'"{safe_query}"'
         project_filter = "AND n.project = ?" if project else ""
         params = [fts_query] + ([project] if project else []) + [limit_clamped * 4]
@@ -331,8 +332,9 @@ def search_memory(
             g_boost = 0.0
             content_lower = content.lower()
             for entity_term, bonus in graph_bonus.items():
-                if entity_term in content_lower:
+                if re.search(r'\b' + re.escape(entity_term) + r'\b', content_lower):
                     g_boost += bonus * 0.25
+
 
             rrf_score = (1.2 / (k_rrf + r_dense)) + (1.0 / (k_rrf + r_lex)) + g_boost
 
@@ -428,18 +430,21 @@ def extract_and_save_memory(
             r"(?:Prefer|prefer|Always use|always use|Choose|choose)\s+([a-zA-Z0-9_\-\.]{2,30})\s+(?:over|instead of|rather than)\s+([a-zA-Z0-9_\-\.]{2,30})",
         ]
         
-        for pat in patterns:
+        for pat_idx, pat in enumerate(patterns):
             for match in re.finditer(pat, text, re.IGNORECASE):
                 groups = match.groups()
                 if len(groups) == 3:
                     s, r, o = groups
                 elif len(groups) == 2:
-                    if "prefer" in pat.lower() or "instead" in pat.lower():
+                    # pat_idx 3 = comparative preference: Prefer X over Y -> (X, Y)
+                    if pat_idx == 3:
                         s, r, o = groups[0], "preferred_over", groups[1]
                     else:
+                        # pat_idx 2 = conversational: We/I <verb> <object> -> (verb, object)
                         s, r, o = "Architecture", groups[0].lower().replace(" ", "_"), groups[1]
                 else:
                     continue
+
                 
                 s_clean, r_clean, o_clean = s.strip(), r.strip().lower().replace(" ", "_"), o.strip()
                 stop_words = ("we", "the", "a", "an", "it", "to", "for", "in", "of", "and", "or")
@@ -628,7 +633,8 @@ def visualize_graph(node: str, depth: int = 2, project: Optional[str] = None) ->
     Generates Mermaid.js and ASCII relational network diagrams for power users.
     """
     graph_text = query_graph(node, depth=depth, project=project)
-    if "No graph edges found" in graph_text:
+    if "No active graph edges found" in graph_text or "No graph edges found" in graph_text:
+
         return graph_text
 
     mermaid_lines = ["```mermaid", "graph LR", f'  root["{node}"]:::primary']

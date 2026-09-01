@@ -106,7 +106,7 @@ def init_db(force: bool = False):
                             if "superseded_by" not in edge_cols:
                                 conn.execute("ALTER TABLE edges ADD COLUMN superseded_by TEXT DEFAULT '';")
                             if "transaction_time" not in edge_cols:
-                                conn.execute("ALTER TABLE edges ADD COLUMN transaction_time TEXT DEFAULT CURRENT_TIMESTAMP;")
+                                conn.execute("ALTER TABLE edges ADD COLUMN transaction_time TEXT DEFAULT '';")
                             conn.commit()
                         except Exception:
                             pass
@@ -200,7 +200,8 @@ def init_db(force: bool = False):
                 if "superseded_by" not in edge_cols:
                     conn.execute("ALTER TABLE edges ADD COLUMN superseded_by TEXT DEFAULT '';")
                 if "transaction_time" not in edge_cols:
-                    conn.execute("ALTER TABLE edges ADD COLUMN transaction_time TEXT DEFAULT CURRENT_TIMESTAMP;")
+                    conn.execute("ALTER TABLE edges ADD COLUMN transaction_time TEXT DEFAULT '';")
+
 
                 # FTS5 Trigram Full-Text Index
                 conn.execute("""
