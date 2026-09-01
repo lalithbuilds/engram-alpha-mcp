@@ -34,6 +34,7 @@ from .amx import (
     amx_batch_cosine_similarity,
     is_amx_hardware_available,
     get_acceleration_tier,
+    get_embedding_model,
 )
 from .ingest import ingest_obsidian_vault
 
@@ -124,8 +125,11 @@ def save_memory(
     node_id, warnings = _save_node(
         "memory", content, importance=importance, category=category, project=project, agent=agent
     )
+    backend_note = ""
+    if get_embedding_model() is None:
+        backend_note = " [Notice: Using zero-dependency hashed projection. Install fastembed for deep neural semantics]"
     warn_str = f" Warnings: {warnings}" if warnings else ""
-    return f"Saved Node {node_id} (Project: {project}, Agent: {agent}).{warn_str}"
+    return f"Saved Node {node_id} (Project: {project}, Agent: {agent}).{warn_str}{backend_note}"
 
 @mcp.tool()
 @retry_db_lock(max_retries=7)
@@ -205,12 +209,12 @@ def search_memory(
                     extra_filter += " AND project = ?"
                     extra_params.append(project)
 
+                # Full-namespace evaluation without artificial row limit (eliminates the 5,001-node cliff)
                 extra_rows = conn.execute(
                     f"""
                     SELECT id, content, created_at, last_accessed_at, embedding, 0.0 as rank, importance, project
                     FROM nodes
                     {extra_filter}
-                    LIMIT 5000
                     """,
                     extra_params,
                 ).fetchall()
@@ -505,7 +509,7 @@ def query_graph(node: str, depth: int = 2, project: Optional[str] = None, includ
         LIMIT 100;
         """
 
-        params = {"node": node_clean, "max_depth": min(max(1, depth), 5)}
+        params = {"node": node_clean, "max_depth": min(max(1, depth), 4)}
         if project:
             params["project"] = project
 
@@ -527,11 +531,11 @@ def query_graph(node: str, depth: int = 2, project: Optional[str] = None, includ
 
 @mcp.tool()
 @retry_db_lock(max_retries=7)
-def deduplicate_memories(similarity_threshold: float = 0.92, project: Optional[str] = None) -> str:
+def deduplicate_memories(similarity_threshold: float = 0.92, project: Optional[str] = None, batch_size: int = 1000) -> str:
     """
     Autonomous Memory Deduplication & Semantic Merging Agent:
     Finds clusters of duplicate/near-identical memory nodes, merges access counts and edges,
-    and prunes redundant duplicate records to maintain clean context.
+    and prunes redundant duplicate records in chunks of 1,000 nodes.
     """
     conn = get_db()
     try:
@@ -541,7 +545,7 @@ def deduplicate_memories(similarity_threshold: float = 0.92, project: Optional[s
             filter_str += " AND project = ?"
             params.append(project)
 
-        rows = conn.execute(f"SELECT id, content, embedding, access_count, importance FROM nodes {filter_str}", params).fetchall()
+        rows = conn.execute(f"SELECT id, content, embedding, access_count, importance FROM nodes {filter_str} LIMIT ?", params + [batch_size]).fetchall()
         if len(rows) < 2:
             return "Insufficient records to deduplicate."
 
@@ -598,15 +602,22 @@ def visualize_graph(node: str, depth: int = 2, project: Optional[str] = None) ->
         return graph_text
 
     mermaid_lines = ["```mermaid", "graph LR", f'  root["{node}"]:::primary']
-    ascii_lines = [f"Topology for [{node}]:"]
+    ascii_lines = [f"Knowledge Graph Topology for [{node}]:", "=" * 50]
 
-    edges = re.findall(r"\[([^\]]+)\]\s+-\[([^\]]+)\]->\s+\[([^\]]+)\]", graph_text)
-    for s, r, o in edges:
-        s_safe = s.replace('"', '')
-        o_safe = o.replace('"', '')
-        r_safe = r.replace('"', '')
-        mermaid_lines.append(f'  "{s_safe}" -- "{r_safe}" --> "{o_safe}"')
-        ascii_lines.append(f"  [{s_safe}] ──({r_safe})──► [{o_safe}]")
+    for line in graph_text.split("\n"):
+        if not line.strip() or "-[" not in line:
+            continue
+        ascii_lines.append(f"  {line}")
+        parts = line.split("-[")
+        if len(parts) >= 2:
+            src = parts[0].replace("(", "").replace(")", "").replace("-hop", "").strip().strip("[]")
+            rest = parts[1].split("]->")
+            if len(rest) == 2:
+                rel = rest[0].strip()
+                tgt = rest[1].split("(")[0].strip().strip("[]")
+                safe_src = re.sub(r"[^a-zA-Z0-9_]", "_", src)
+                safe_tgt = re.sub(r"[^a-zA-Z0-9_]", "_", tgt)
+                mermaid_lines.append(f'  {safe_src}["{src}"] -->|"{rel}"| {safe_tgt}["{tgt}"]')
 
     mermaid_lines.append("  classDef primary fill:#ff79c6,stroke:#bd93f9,stroke-width:2px,color:#fff;")
     mermaid_lines.append("```")
@@ -823,12 +834,25 @@ def get_stats() -> str:
         edge_count = conn.execute("SELECT COUNT(*) FROM edges;").fetchone()[0]
         projects = [r[0] for r in conn.execute("SELECT DISTINCT project FROM nodes;").fetchall()]
         tier_status = get_acceleration_tier()
+        model = get_embedding_model()
+        model_name = "BAAI/bge-small-en-v1.5 (Neural ONNX)" if model is not None else "Hashed Hypersphere Projection (Zero-Dependency Fallback)"
+        
+        has_vec = False
+        try:
+            cur = conn.execute("SELECT name FROM sqlite_master WHERE type='table' AND name='nodes_vec';")
+            has_vec = cur.fetchone() is not None
+        except Exception:
+            has_vec = False
+        vec_indexing = "Native sqlite-vec (vec0 ANN Virtual Table)" if has_vec else "Hardware AMX / BLAS Full-Scan"
+
         return (
             f"🧠 Engram Alpha Universal MCP Stats:\n"
             f"- Total Memories / Nodes: {node_count}\n"
             f"- Knowledge Graph Edges: {edge_count}\n"
             f"- Active Projects / Namespaces: {projects}\n"
             f"- Hardware Engine Tier: {tier_status}\n"
+            f"- Embedding Backend: {model_name}\n"
+            f"- Vector Indexing Engine: {vec_indexing}\n"
             f"- Architecture: Cross-Platform Production Standard (macOS, Linux, Windows, Docker)"
         )
     finally:

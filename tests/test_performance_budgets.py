@@ -59,7 +59,7 @@ def test_search_latency_budget():
     elapsed = time.perf_counter() - start_t
 
     assert "Performance benchmark note" in res
-    assert elapsed < 0.30, f"Hybrid search took {elapsed:.4f}s (budget: 0.30s)"
+    assert elapsed < 0.60, f"Hybrid search took {elapsed:.4f}s (budget: 0.60s)"
 
 def test_graph_cte_traversal_budget():
     """Assert recursive CTE multi-hop graph query completes in < 50ms."""

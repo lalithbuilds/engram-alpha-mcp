@@ -30,7 +30,7 @@ def setup_db():
     if os.path.exists("test_audit_fixes.sqlite"):
         try: os.remove("test_audit_fixes.sqlite")
         except: pass
-    init_db()
+    init_db(force=True)
     yield
     for f in ["test_audit_fixes.sqlite", "test_audit_fixes.sqlite-wal", "test_audit_fixes.sqlite-shm"]:
         if os.path.exists(f):

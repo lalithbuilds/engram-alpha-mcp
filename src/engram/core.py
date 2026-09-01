@@ -69,12 +69,18 @@ def check_storage_liveness(target_path: Path, timeout_seconds: float = 1.0) -> b
 def init_db(force: bool = False):
     """
     Initializes database tables, triggers, indexes, and schema versions.
-    Thread-safe, idempotent, and verifies physical table presence.
+    Thread-safe, idempotent, and uses _INITIALIZED_PATHS fast-path.
     """
     target_path = Path(os.environ.get("ENGRAM_DB_PATH", DB_PATH)).resolve()
     target_path_str = str(target_path)
     
     with _INIT_LOCK:
+        if target_path_str in _INITIALIZED_PATHS and not force:
+            if target_path.exists():
+                return
+            else:
+                _INITIALIZED_PATHS.discard(target_path_str)
+
         if not check_storage_liveness(target_path, timeout_seconds=1.0):
             raise OSError(f"Storage path {target_path} is unresponsive or inaccessible.")
 
@@ -91,6 +97,7 @@ def init_db(force: bool = False):
                     cur = conn.execute("SELECT name FROM sqlite_master WHERE type='table' AND name='nodes';")
                     if cur.fetchone():
                         conn.close()
+                        _INITIALIZED_PATHS.add(target_path_str)
                         return
                 except Exception:
                     pass
@@ -233,6 +240,7 @@ def init_db(force: bool = False):
                         pass
 
                 conn.commit()
+                _INITIALIZED_PATHS.add(target_path_str)
             except sqlite3.Error as e:
                 conn.rollback()
                 raise e
@@ -245,10 +253,13 @@ def init_db(force: bool = False):
 def get_db():
     """
     Returns an active SQLite database connection with custom functions and WAL pragmas.
-    Guarantees table existence on disk.
+    Uses _INITIALIZED_PATHS fast-path to eliminate redundant DDL checks.
     """
-    init_db()
-    target_path_str = str(Path(os.environ.get("ENGRAM_DB_PATH", DB_PATH)).resolve())
+    target_path = Path(os.environ.get("ENGRAM_DB_PATH", DB_PATH)).resolve()
+    target_path_str = str(target_path)
+    if target_path_str not in _INITIALIZED_PATHS or not target_path.exists():
+        init_db()
+
     conn = sqlite3.connect(target_path_str, timeout=30.0)
     
     conn.execute("PRAGMA journal_mode = WAL;")

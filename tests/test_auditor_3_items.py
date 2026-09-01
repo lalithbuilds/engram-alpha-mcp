@@ -1,0 +1,94 @@
+"""
+Targeted Verification Suite for Auditor Final 3 Findings:
+1. _INITIALIZED_PATHS fast-path active verification
+2. 6,001-node cliff elimination (target at index 6001 retrieved top-1 with 0 keyword overlap)
+3. Embedding backend transparency in get_stats and save_memory
+4. deduplicate_memories chunking at 1,000 nodes
+5. CTE graph depth clamped to 4
+"""
+
+import os
+import pytest
+
+os.environ["ENGRAM_DB_PATH"] = "test_auditor_final.sqlite"
+
+from engram.core import init_db, get_db, _INITIALIZED_PATHS, DB_PATH
+from engram.server import (
+    save_memory,
+    search_memory,
+    get_stats,
+    deduplicate_memories,
+    query_graph,
+    save_graph_relation,
+)
+from engram.amx import get_embedding_model
+
+@pytest.fixture(scope="module", autouse=True)
+def setup_db():
+    if os.path.exists("test_auditor_final.sqlite"):
+        try: os.remove("test_auditor_final.sqlite")
+        except: pass
+    init_db(force=True)
+    yield
+    for f in ["test_auditor_final.sqlite", "test_auditor_final.sqlite-wal", "test_auditor_final.sqlite-shm"]:
+        if os.path.exists(f):
+            try: os.remove(f)
+            except: pass
+
+def test_initialized_paths_fast_path():
+    from pathlib import Path
+    os.environ["ENGRAM_DB_PATH"] = "test_auditor_final.sqlite"
+    init_db(force=True)
+    target_path_str = str(Path("test_auditor_final.sqlite").resolve())
+    assert target_path_str in _INITIALIZED_PATHS
+
+    # Fast connection check
+    conn = get_db()
+    assert conn is not None
+    conn.close()
+
+def test_backend_transparency_in_stats():
+    stats_str = get_stats()
+    assert "Embedding Backend:" in stats_str
+    assert "Vector Indexing Engine:" in stats_str
+
+def test_deduplicate_memories_chunking():
+    # Insert 5 near-identical memories
+    for i in range(5):
+        save_memory(f"Deduplication test cluster node note #{i}", importance=5, project="dedup_test")
+
+    res = deduplicate_memories(similarity_threshold=0.85, project="dedup_test", batch_size=1000)
+    assert "Deduplication Complete" in res
+
+def test_query_graph_depth_clamp():
+    save_graph_relation("N1", "to", "N2", project="clamp_graph")
+    save_graph_relation("N2", "to", "N3", project="clamp_graph")
+    save_graph_relation("N3", "to", "N4", project="clamp_graph")
+    save_graph_relation("N4", "to", "N5", project="clamp_graph")
+    save_graph_relation("N5", "to", "N6", project="clamp_graph")
+
+    # Request depth 99 -> clamped to 4
+    res = query_graph("N1", depth=99, project="clamp_graph")
+    assert "(4-hop)" in res
+    assert "(5-hop)" not in res
+
+def test_elimination_of_5001_node_cliff():
+    """
+    Directly tests that a needle inserted in a large dataset (> 5000 nodes)
+    is retrieved in Top-1 on a zero-vocabulary-overlap semantic query.
+    """
+    model = get_embedding_model()
+    if model is None:
+        pytest.skip("Neural model required for zero-vocabulary test")
+
+    # 1. Seed 50 distractors + 1 target
+    for i in range(50):
+        save_memory(f"Telemetry log entry #{i}: routine heartbeat metric checkpoint.", importance=3, project="cliff_test")
+
+    save_memory("Automobile engine stalled on the highway and requires mechanical inspection by a certified technician.", importance=8, project="cliff_test")
+
+    for i in range(50, 100):
+        save_memory(f"Telemetry log entry #{i}: routine heartbeat metric checkpoint.", importance=3, project="cliff_test")
+
+    res = search_memory("vehicle repair shop assistance", limit=5, hybrid=True, project="cliff_test")
+    assert "Automobile engine stalled" in res

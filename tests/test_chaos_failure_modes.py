@@ -231,7 +231,15 @@ def test_database_permission_error_graceful_handling():
         except Exception as e:
             assert "readonly" in str(e).lower() or "permission" in str(e).lower() or "attempt to write a readonly database" in str(e).lower()
     finally:
-        os.chmod("test_readonly.sqlite", 0o600)
-        p.unlink()
-        if old_env:
+        try:
+            os.chmod("test_readonly.sqlite", 0o600)
+            if p.exists():
+                p.unlink()
+        except Exception:
+            pass
+        if old_env is not None:
             os.environ["ENGRAM_DB_PATH"] = old_env
+        else:
+            os.environ.pop("ENGRAM_DB_PATH", None)
+        from engram.core import _INITIALIZED_PATHS
+        _INITIALIZED_PATHS.discard(str(p.resolve()))

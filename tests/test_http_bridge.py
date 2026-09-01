@@ -18,7 +18,7 @@ from engram.core import init_db
 from engram.http_bridge import start_http_gateway, get_openapi_schema
 from engram.server import save_memory
 
-TEST_PORT = 8999
+TEST_PORT = 9187
 BASE_URL = f"http://127.0.0.1:{TEST_PORT}"
 
 @pytest.fixture(scope="module", autouse=True)
