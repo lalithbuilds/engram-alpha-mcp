@@ -13,7 +13,6 @@ import os
 import pytest
 from pathlib import Path
 
-os.environ["ENGRAM_DB_PATH"] = "test_audit_fixes.sqlite"
 
 from engram.core import init_db, get_db, _INITIALIZED_PATHS
 from engram.server import (
@@ -25,20 +24,6 @@ from engram.server import (
 )
 from engram.ingest import ingest_single_obsidian_file, delete_obsidian_file_nodes
 
-@pytest.fixture(scope="module", autouse=True)
-def setup_db():
-    for f in ["test_audit_fixes.sqlite", "test_audit_fixes.sqlite-wal", "test_audit_fixes.sqlite-shm"]:
-        if os.path.exists(f):
-            try: os.remove(f)
-            except Exception: pass
-    _INITIALIZED_PATHS.clear()
-    init_db(force=True)
-    yield
-    for f in ["test_audit_fixes.sqlite", "test_audit_fixes.sqlite-wal", "test_audit_fixes.sqlite-shm"]:
-        if os.path.exists(f):
-            try: os.remove(f)
-            except Exception: pass
-    _INITIALIZED_PATHS.clear()
 
 def test_fts5_multi_word_search():
     save_memory("High throughput concurrent reader architecture with SQLite WAL journal mode.", importance=8, category="test", project="fts_test")

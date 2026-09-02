@@ -12,7 +12,6 @@ from pathlib import Path
 from typing import Dict, List, Any
 
 # Ensure isolated test database
-os.environ["ENGRAM_DB_PATH"] = "test_semantic_council.sqlite"
 
 from engram.core import init_db, get_db, _INITIALIZED_PATHS
 from engram.server import save_memory, search_memory
@@ -23,20 +22,6 @@ from engram.amx import (
     get_embedding_model,
 )
 
-@pytest.fixture(scope="module", autouse=True)
-def setup_db():
-    for f in ["test_semantic_council.sqlite", "test_semantic_council.sqlite-wal", "test_semantic_council.sqlite-shm"]:
-        if os.path.exists(f):
-            try: os.remove(f)
-            except Exception: pass
-    _INITIALIZED_PATHS.clear()
-    init_db(force=True)
-    yield
-    for f in ["test_semantic_council.sqlite", "test_semantic_council.sqlite-wal", "test_semantic_council.sqlite-shm"]:
-        if os.path.exists(f):
-            try: os.remove(f)
-            except Exception: pass
-    _INITIALIZED_PATHS.clear()
 
 def run_semantic_council_gauntlet():
     if os.path.exists("test_semantic_council.sqlite"):

@@ -468,8 +468,9 @@ def extract_and_save_memory(
                     created_edges.append(f"[{s_clean}] -[{r_clean}]-> [{o_clean}]")
 
         conn.commit()
-    except Exception:
+    except Exception as e:
         conn.rollback()
+        raise e
     finally:
         conn.close()
 

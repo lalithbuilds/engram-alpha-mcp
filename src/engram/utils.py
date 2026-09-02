@@ -119,7 +119,8 @@ def retry_db_lock(max_retries=7):
                 try:
                     return func(*args, **kwargs)
                 except Exception as e:
-                    if "database is locked" in str(e).lower():
+                    err_str = str(e).lower()
+                    if "database" in err_str and "locked" in err_str:
                         if attempt == max_retries:
                             raise e
                         # Add jitter to avoid thundering herd on db lock

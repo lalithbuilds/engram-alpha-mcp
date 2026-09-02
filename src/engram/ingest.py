@@ -155,7 +155,7 @@ def ingest_obsidian_vault(vault_path_str: str, project: str = "default") -> Dict
             doc_title = file_path.stem
             doc_title_clean = doc_title.replace('\\', r'\\').replace('%', r'\%').replace('_', r'\_')
             conn.execute(
-                "DELETE FROM nodes WHERE category = 'obsidian' AND content LIKE ? ESCAPE '\' AND project = ?",
+                "DELETE FROM nodes WHERE category = 'obsidian' AND content LIKE ? ESCAPE '\\' AND project = ?",
                 (f"[{doc_title_clean} (part%", project),
             )
             conn.execute(

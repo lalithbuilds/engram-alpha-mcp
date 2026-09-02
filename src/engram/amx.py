@@ -206,16 +206,27 @@ def amx_batch_cosine_similarity(
 _EMBEDDING_MODEL = None
 _EMBEDDING_LOCK = threading.Lock()
 _FASTEMBED_PROBED = False
+_EMBEDDING_PID = None
 
 def get_embedding_model():
     """Thread-safe lazy singleton for neural embedding model."""
-    global _EMBEDDING_MODEL, _FASTEMBED_PROBED
+    global _EMBEDDING_MODEL, _FASTEMBED_PROBED, _EMBEDDING_PID
+    
+    current_pid = os.getpid()
+    if _EMBEDDING_PID != current_pid:
+        _EMBEDDING_MODEL = None
+        _FASTEMBED_PROBED = False
+        _EMBEDDING_PID = current_pid
+
     if _FASTEMBED_PROBED and _EMBEDDING_MODEL is None:
         return None
+        
     if _EMBEDDING_MODEL is None:
         with _EMBEDDING_LOCK:
             if _EMBEDDING_MODEL is None and not _FASTEMBED_PROBED:
                 try:
+                    os.environ["OMP_NUM_THREADS"] = "1"
+                    os.environ["TOKENIZERS_PARALLELISM"] = "false"
                     from fastembed import TextEmbedding
                     _EMBEDDING_MODEL = TextEmbedding(model_name="BAAI/bge-small-en-v1.5", threads=1)
                 except Exception:
@@ -224,23 +235,7 @@ def get_embedding_model():
                     _FASTEMBED_PROBED = True
     return _EMBEDDING_MODEL
 
-def generate_dense_embedding(text: str, dim: int = EMBEDDING_DIM) -> List[float]:
-    """
-    Generates a high-precision dense semantic vector on any OS.
-    Uses cached BAAI/bge-small-en-v1.5 neural model if available (10-50ms CPU / sub-ms SIMD),
-    or deterministic semantic hypersphere projection as zero-dependency fallback.
-    """
-    model = get_embedding_model()
-    if model is not None:
-        try:
-            gen = model.embed([text])
-            embeddings = list(gen)
-            return [float(x) for x in embeddings[0]]
-        except Exception:
-            pass
-
-    # Universal Deterministic High-Dimensional Hashed Semantic Projection
-    # Distributes word n-grams uniformly across configurable hypersphere
+def _deterministic_fallback(text: str, dim: int) -> List[float]:
     import hashlib
     vec = [0.0] * dim
     words = text.lower().split()
@@ -266,6 +261,23 @@ def generate_dense_embedding(text: str, dim: int = EMBEDDING_DIM) -> List[float]
         vec = [x / norm for x in vec]
     return vec
 
+def generate_dense_embedding(text: str, dim: int = EMBEDDING_DIM) -> List[float]:
+    """
+    Generates a high-precision dense semantic vector on any OS.
+    Uses cached BAAI/bge-small-en-v1.5 neural model if available (10-50ms CPU / sub-ms SIMD),
+    or deterministic semantic hypersphere projection as zero-dependency fallback.
+    """
+    model = get_embedding_model()
+    if model is not None:
+        try:
+            gen = model.embed([text])
+            embeddings = list(gen)
+            return [float(x) for x in embeddings[0]]
+        except Exception:
+            pass
+
+    return _deterministic_fallback(text, dim)
+
 def generate_dense_embeddings_batch(texts: List[str], dim: int = EMBEDDING_DIM) -> List[List[float]]:
     """
     High-throughput vectorized batch embedding generation.
@@ -281,4 +293,4 @@ def generate_dense_embeddings_batch(texts: List[str], dim: int = EMBEDDING_DIM) 
             return [[float(x) for x in emb] for emb in embeddings]
         except Exception:
             pass
-    return [generate_dense_embedding(t, dim=dim) for t in texts]
+    return [_deterministic_fallback(t, dim) for t in texts]

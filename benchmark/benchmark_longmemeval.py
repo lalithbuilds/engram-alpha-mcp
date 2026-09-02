@@ -120,21 +120,24 @@ def run_benchmark(dataset_path, output_file="longmemeval_results_alpha.json"):
     for idx, item in enumerate(data):
         print(f"[{idx+1}/{len(data)}] Ingesting & Evaluating needle '{item.get('question_id', idx)}'...", end="\r", flush=True)
         proj_name = f"bench_{idx}"
-        ingest_memory(item, project=proj_name)
+        try:
+            ingest_memory(item, project=proj_name)
 
-        is_unanswerable, correct = evaluate_single_item(item, project=proj_name)
+            is_unanswerable, correct = evaluate_single_item(item, project=proj_name)
 
-        if is_unanswerable is not None:
-            results["items"].append({
-                "question_id": item.get("question_id"),
-                "question": item.get("question"),
-                "correct": correct,
-                "is_unanswerable": is_unanswerable,
-            })
-            if is_unanswerable:
-                unanswerable_count += 1
-            elif correct:
-                correct_count += 1
+            if is_unanswerable is not None:
+                results["items"].append({
+                    "question_id": item.get("question_id"),
+                    "question": item.get("question"),
+                    "correct": correct,
+                    "is_unanswerable": is_unanswerable,
+                })
+                if is_unanswerable:
+                    unanswerable_count += 1
+                elif correct:
+                    correct_count += 1
+        except Exception as e:
+            print(f"\n❌ Error processing item {item.get('question_id', idx)}: {e}")
 
     elapsed = time.perf_counter() - start_t
     print()

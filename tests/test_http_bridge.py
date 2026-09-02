@@ -12,7 +12,6 @@ import threading
 import pytest
 from pathlib import Path
 
-os.environ["ENGRAM_DB_PATH"] = "test_http_gateway.sqlite"
 
 from engram.core import init_db
 from engram.http_bridge import start_http_gateway, get_openapi_schema
@@ -23,23 +22,22 @@ BASE_URL = f"http://127.0.0.1:{TEST_PORT}"
 
 @pytest.fixture(scope="module", autouse=True)
 def run_test_server():
-    if os.path.exists("test_http_gateway.sqlite"):
-        try: os.remove("test_http_gateway.sqlite")
-        except: pass
-
-    init_db()
     server_thread = threading.Thread(
         target=start_http_gateway,
         kwargs={"host": "127.0.0.1", "port": TEST_PORT},
         daemon=True,
     )
     server_thread.start()
-    time.sleep(0.5)
+    # Poll until server is ready
+    import requests
+    for _ in range(30):
+        try:
+            requests.get(BASE_URL + "/health", timeout=0.1)
+            break
+        except requests.exceptions.RequestException:
+            time.sleep(0.1)
     yield
-    for f in ["test_http_gateway.sqlite", "test_http_gateway.sqlite-wal", "test_http_gateway.sqlite-shm"]:
-        if os.path.exists(f):
-            try: os.remove(f)
-            except: pass
+
 
 def test_openapi_schema_generation():
     schema = get_openapi_schema("https://engram.example.com")

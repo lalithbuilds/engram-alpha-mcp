@@ -8,7 +8,6 @@ import json
 import pytest
 from pathlib import Path
 
-os.environ["ENGRAM_DB_PATH"] = "test_full_suite.sqlite"
 
 from engram.core import init_db, _INITIALIZED_PATHS
 from engram.server import (
@@ -21,20 +20,6 @@ from engram.server import (
 )
 from engram.cli import cmd_export, cmd_import
 
-@pytest.fixture(scope="module", autouse=True)
-def setup_db():
-    for f in ["test_full_suite.sqlite", "test_full_suite.sqlite-wal", "test_full_suite.sqlite-shm", "test_export.json"]:
-        if os.path.exists(f):
-            try: os.remove(f)
-            except Exception: pass
-    _INITIALIZED_PATHS.clear()
-    init_db(force=True)
-    yield
-    for f in ["test_full_suite.sqlite", "test_full_suite.sqlite-wal", "test_full_suite.sqlite-shm", "test_export.json"]:
-        if os.path.exists(f):
-            try: os.remove(f)
-            except Exception: pass
-    _INITIALIZED_PATHS.clear()
 
 def test_auto_context_xml_formatting():
     save_memory("System architectural invariant: Never bypass SQLite WAL.", importance=10, category="architecture", project="ctx_test")

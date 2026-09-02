@@ -14,7 +14,6 @@ import sqlite3
 import pytest
 from pathlib import Path
 
-os.environ["ENGRAM_DB_PATH"] = "test_chaos.sqlite"
 
 from engram.core import init_db, get_db, optimize_and_checkpoint, check_storage_liveness
 from engram.amx import (
@@ -34,21 +33,6 @@ from engram.server import (
     checkpoint_db,
 )
 
-@pytest.fixture(autouse=True)
-def setup_chaos_db():
-    if os.path.exists("test_chaos.sqlite"):
-        try: os.remove("test_chaos.sqlite")
-        except: pass
-    init_db()
-    yield
-    for f in ["test_chaos.sqlite", "test_chaos.sqlite-wal", "test_chaos.sqlite-shm"]:
-        if os.path.exists(f):
-            try: os.remove(f)
-            except: pass
-
-# ----------------------------------------------------------------------
-# 1. MALFORMED INPUTS & FTS5 INJECTION ATTACKS
-# ----------------------------------------------------------------------
 
 def test_fts5_syntax_injection_and_malformed_queries():
     """Test malformed query strings that typically crash SQLite FTS5 (e.g. unclosed quotes, wildcards, operators)."""
@@ -207,7 +191,7 @@ def test_high_concurrency_race_collisions():
 # 5. STORAGE LIVELOCK / CORRUPT FILE BEHAVIOR
 # ----------------------------------------------------------------------
 
-def test_database_permission_error_graceful_handling():
+def test_database_permission_error_graceful_handling(monkeypatch):
     """Verify that a permission-denied / read-only SQLite database raises clean exceptions instead of segfaults."""
     p = Path("test_readonly.sqlite")
     if p.exists():
@@ -220,9 +204,7 @@ def test_database_permission_error_graceful_handling():
     conn.close()
 
     os.chmod("test_readonly.sqlite", 0o400) # Read only
-
-    old_env = os.environ.get("ENGRAM_DB_PATH")
-    os.environ["ENGRAM_DB_PATH"] = "test_readonly.sqlite"
+    monkeypatch.setenv("ENGRAM_DB_PATH", "test_readonly.sqlite")
 
     try:
         # Saving should cleanly raise an error or handle without segfaulting
@@ -237,9 +219,5 @@ def test_database_permission_error_graceful_handling():
                 p.unlink()
         except Exception:
             pass
-        if old_env is not None:
-            os.environ["ENGRAM_DB_PATH"] = old_env
-        else:
-            os.environ.pop("ENGRAM_DB_PATH", None)
         from engram.core import _INITIALIZED_PATHS
         _INITIALIZED_PATHS.discard(str(p.resolve()))

@@ -13,6 +13,7 @@ from concurrent.futures import ThreadPoolExecutor, as_completed
 
 os.environ["ENGRAM_DB_PATH"] = "simulation_v3.sqlite"
 
+from engram.core import close_thread_connections
 from engram.server import (
     save_memory,
     search_memory,
@@ -35,8 +36,8 @@ DOMAINS = [
 def council_agent_worker(agent_name: str, operations: int):
     successes = 0
     errors = {}
-
-    for i in range(operations):
+    try:
+        for i in range(operations):
         try:
             action = random.choice(["save", "search", "graph_write", "graph_query"])
             
@@ -61,6 +62,8 @@ def council_agent_worker(agent_name: str, operations: int):
             err_msg = str(e)
             errors[err_msg] = errors.get(err_msg, 0) + 1
 
+    finally:
+        close_thread_connections()
     return agent_name, successes, errors
 
 def main():
@@ -125,6 +128,7 @@ def main():
                 print(f"File: {f} -> Size: {sz} bytes")
     finally:
         conn.close()
+        close_thread_connections()
 
     for f in ["simulation_v3.sqlite", "simulation_v3.sqlite-wal", "simulation_v3.sqlite-shm"]:
         if os.path.exists(f):

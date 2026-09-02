@@ -91,46 +91,35 @@ def init_db(force: bool = False):
             target_path.parent.mkdir(mode=0o700, parents=True, exist_ok=True)
             conn = sqlite3.connect(target_path_str, timeout=30.0)
             
-            # Check if already initialized on disk
-            if not force:
-                try:
-                    cur = conn.execute("SELECT name FROM sqlite_master WHERE type='table' AND name='nodes';")
-                    if cur.fetchone():
-                        # Ensure edges schema has all required columns
-                        try:
-                            edge_cols = {c[1] for c in conn.execute("PRAGMA table_info(edges);").fetchall()}
-                            if "valid_from" not in edge_cols:
-                                conn.execute("ALTER TABLE edges ADD COLUMN valid_from TEXT DEFAULT '';")
-                            if "valid_until" not in edge_cols:
-                                conn.execute("ALTER TABLE edges ADD COLUMN valid_until TEXT DEFAULT '';")
-                            if "superseded_by" not in edge_cols:
-                                conn.execute("ALTER TABLE edges ADD COLUMN superseded_by TEXT DEFAULT '';")
-                            if "transaction_time" not in edge_cols:
-                                conn.execute("ALTER TABLE edges ADD COLUMN transaction_time TEXT DEFAULT '';")
-                            conn.commit()
-                        except Exception:
-                            pass
-                        conn.close()
-                        _INITIALIZED_PATHS.add(target_path_str)
-                        return
-                except Exception:
-                    pass
-
-            conn.execute("PRAGMA journal_mode = WAL;")
-            conn.execute("PRAGMA synchronous = NORMAL;")
-            conn.execute("PRAGMA busy_timeout = 30000;")
-            conn.execute("PRAGMA cache_size = -64000;")
-            conn.execute("PRAGMA mmap_size = 268435456;")
+            import time
+            import random
             
-            def safe_power(base, exp):
+            for attempt in range(1, 8):
                 try:
-                    return math.pow(max(0.001, float(base)), float(exp))
-                except Exception:
-                    return 0.0
+                    conn.execute("PRAGMA journal_mode = WAL;")
+                    conn.execute("PRAGMA synchronous = NORMAL;")
+                    conn.execute("PRAGMA busy_timeout = 30000;")
+                    conn.execute("PRAGMA cache_size = -64000;")
+                    conn.execute("PRAGMA mmap_size = 268435456;")
                     
-            conn.create_function("POWER", 2, safe_power)
+                    def safe_power(base, exp):
+                        try:
+                            return math.pow(max(0.001, float(base)), float(exp))
+                        except Exception:
+                            return 0.0
+                            
+                    conn.create_function("POWER", 2, safe_power)
 
-            conn.execute("BEGIN IMMEDIATE;")
+                    conn.execute("BEGIN IMMEDIATE;")
+                    break
+                except Exception as e:
+                    err_str = str(e).lower()
+                    if "database" in err_str and "locked" in err_str:
+                        if attempt == 7:
+                            raise e
+                        time.sleep(0.1 + random.uniform(0, 0.1))
+                    else:
+                        raise e
             try:
                 # Schema versioning table
                 conn.execute("""
