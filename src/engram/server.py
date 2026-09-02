@@ -118,8 +118,8 @@ def _save_node(
         except Exception:
             pass
 
-    conn.execute("BEGIN IMMEDIATE;")
     try:
+        conn.execute("BEGIN IMMEDIATE;")
         conn.execute(
             """
             INSERT INTO nodes (id, type, content, created_at, updated_at, access_count, last_accessed_at, embedding, importance, category, project, agent)
@@ -398,9 +398,9 @@ def extract_and_save_memory(
     )
 
     conn = get_db()
-    conn.execute("BEGIN IMMEDIATE;")
     created_edges = []
     try:
+        conn.execute("BEGIN IMMEDIATE;")
         now = datetime.now(timezone.utc).isoformat()
 
         # 1. Wikilinks [[slug]] and Hashtags #tag
@@ -490,8 +490,8 @@ def save_graph_relation(
 ) -> str:
     """Save a Subject-Predicate-Object relation with bi-temporal validity and project namespace."""
     conn = get_db()
-    conn.execute("BEGIN IMMEDIATE;")
     try:
+        conn.execute("BEGIN IMMEDIATE;")
         now = datetime.now(timezone.utc).isoformat()
         conn.execute(
             """
@@ -606,6 +606,8 @@ def deduplicate_memories(similarity_threshold: float = 0.92, project: Optional[s
             if rows[i][0] in deleted_ids or i not in row_vectors:
                 continue
             primary_id = rows[i][0]
+            current_access = rows[i][3]
+            current_importance = rows[i][4]
             remaining_indices = [j for j in range(i + 1, len(rows)) if rows[j][0] not in deleted_ids and j in row_vectors]
             if not remaining_indices:
                 continue
@@ -618,12 +620,12 @@ def deduplicate_memories(similarity_threshold: float = 0.92, project: Optional[s
                     continue
                 if sim >= similarity_threshold:
                     dup_id = rows[j_idx][0]
-                    combined_access = rows[i][3] + rows[j_idx][3] + 1
-                    max_importance = max(rows[i][4], rows[j_idx][4])
+                    current_access += rows[j_idx][3] + 1
+                    current_importance = max(current_importance, rows[j_idx][4])
 
                     conn.execute(
                         "UPDATE nodes SET access_count = ?, importance = ? WHERE id = ?",
-                        (combined_access, max_importance, primary_id),
+                        (current_access, current_importance, primary_id),
                     )
 
                     # FIX BUG 22: delete conflicting edges first, then update remaining
@@ -832,8 +834,8 @@ def edit_memory(
 ) -> str:
     """Edit an existing memory's content, importance, or category by its node ID."""
     conn = get_db()
-    conn.execute("BEGIN IMMEDIATE;")
     try:
+        conn.execute("BEGIN IMMEDIATE;")
         row = conn.execute("SELECT id, content, importance, category FROM nodes WHERE id = ?", (id,)).fetchone()
         if not row:
             return f"Error: Memory with ID '{id}' not found."
@@ -867,8 +869,8 @@ def edit_memory(
 def delete_memory(id: str) -> str:
     """Delete a memory node and cascade-delete all its associated knowledge graph edges by ID."""
     conn = get_db()
-    conn.execute("BEGIN IMMEDIATE;")
     try:
+        conn.execute("BEGIN IMMEDIATE;")
         conn.execute("DELETE FROM edges WHERE source = ? OR target = ?", (id, id))
         cur = conn.execute("DELETE FROM nodes WHERE id = ?", (id,))
         if cur.rowcount == 0:

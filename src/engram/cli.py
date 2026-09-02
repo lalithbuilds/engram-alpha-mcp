@@ -143,9 +143,9 @@ def cmd_export(file_path: str, project: str = None):
             for r in node_rows
         ]
 
-        edge_rows = conn.execute(f"SELECT source, target, relation, weight, project, valid_from, valid_until FROM edges {proj_filter}", params).fetchall()
+        edge_rows = conn.execute(f"SELECT source, target, relation, weight, project, valid_from, valid_until, superseded_by FROM edges {proj_filter}", params).fetchall()
         edges = [
-            {"source": r[0], "target": r[1], "relation": r[2], "weight": r[3], "project": r[4], "valid_from": r[5], "valid_until": r[6]}
+            {"source": r[0], "target": r[1], "relation": r[2], "weight": r[3], "project": r[4], "valid_from": r[5], "valid_until": r[6], "superseded_by": r[7]}
             for r in edge_rows
         ]
         
@@ -173,7 +173,8 @@ def cmd_import(file_path: str, project: str = None):
         except (ValueError, TypeError):
             imp = 5
         proj = project if project is not None else n.get("project", "default")
-        save_memory(content, category=cat, importance=imp, project=proj)
+        agent = n.get("agent", "system")
+        save_memory(content, category=cat, importance=imp, project=proj, agent=agent)
         imported_nodes += 1
 
     imported_edges = 0
@@ -188,7 +189,8 @@ def cmd_import(file_path: str, project: str = None):
         proj = project if project is not None else e.get("project", "default")
         vf = e.get("valid_from", "")
         vu = e.get("valid_until", "")
-        save_graph_relation(s, r, t, weight=w, project=proj, valid_from=vf, valid_until=vu)
+        sb = e.get("superseded_by", "")
+        save_graph_relation(s, r, t, weight=w, project=proj, valid_from=vf, valid_until=vu, superseded_by=sb)
         imported_edges += 1
 
     print(f"✅ Imported {imported_nodes} nodes and {imported_edges} graph edges from {file_path}")
