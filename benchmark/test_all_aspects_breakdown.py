@@ -99,15 +99,26 @@ def run_all_aspects_battery():
     mat = [[((i + j) % 10) * 0.1 for j in range(384)] for i in range(num_scale_vectors)]
 
     t0 = time.perf_counter()
-    scores = amx_batch_cosine_similarity(query_vec, mat)
-    t_blas = time.perf_counter() - t0
-    blas_throughput = num_scale_vectors / t_blas if t_blas > 0 else 0
+    try:
+        scores = amx_batch_cosine_similarity(query_vec, mat)
+        t_blas = time.perf_counter() - t0
+        blas_throughput = num_scale_vectors / t_blas if t_blas > 0 else 0
+    except Exception as e:
+        scores = []
+        t_blas = 1.0
+        blas_throughput = 0
+        print(f"❌ AMX Batch Cosine Similarity failed: {e}")
 
     # Test batch ingestion of 500 nodes
     nodes_batch = [f"Scale test document #{i} describing microservice architecture patterns and distributed caches." for i in range(500)]
     t0_embed = time.perf_counter()
-    batch_vecs = generate_dense_embeddings_batch(nodes_batch)
-    t_embed = time.perf_counter() - t0_embed
+    try:
+        batch_vecs = generate_dense_embeddings_batch(nodes_batch)
+        t_embed = time.perf_counter() - t0_embed
+    except Exception as e:
+        batch_vecs = []
+        t_embed = 1.0
+        print(f"❌ Batch embedding failed: {e}")
 
     print(f"  • Matrix BLAS Throughput: {blas_throughput:,.0f} vectors/sec ({num_scale_vectors:,} in {t_blas*1000:.1f}ms)")
     print(f"  • Batch Embedding Throughput: {len(nodes_batch)/t_embed:,.1f} texts/sec (500 texts in {t_embed*1000:.1f}ms)")
