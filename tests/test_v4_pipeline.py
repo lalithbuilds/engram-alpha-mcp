@@ -5,12 +5,12 @@ import threading
 
 def test_pipeline():
     try:
-        shm = shared_memory.SharedMemory(name=SHM_NAME, create=True, size=SHM_SIZE)
-    except FileExistsError:
         shm = shared_memory.SharedMemory(name=SHM_NAME)
         shm.unlink()
-        shm = shared_memory.SharedMemory(name=SHM_NAME, create=True, size=SHM_SIZE)
+    except FileNotFoundError:
+        pass
         
+    mm = V4MemoryManager(99, create=True)
     server = V4ZeroMQServer()
     
     t1 = threading.Thread(target=server.start_producer, args=(0, ["hello", "world"]))
@@ -21,6 +21,6 @@ def test_pipeline():
     assert results[0][1] == "hello"
     assert results[1][1] == "world"
     
-    shm.close()
-    shm.unlink()
+    mm.close()
+    mm.shm.unlink()
     print("V4 Pipeline OK")
