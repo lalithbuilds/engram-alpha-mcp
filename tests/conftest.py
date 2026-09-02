@@ -14,7 +14,7 @@ def isolated_db_path(monkeypatch, tmp_path):
     try:
         from engram.core import _INITIALIZED_PATHS, init_db
         _INITIALIZED_PATHS.clear()
-        init_db(force=True)
+        init_db()
     except ImportError:
         pass
     

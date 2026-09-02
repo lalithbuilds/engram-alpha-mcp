@@ -1,5 +1,5 @@
-from src.engram.v4_core import V4MemoryManager, SHM_NAME, SHM_SIZE
-from src.engram.v4_server import V4ZeroMQServer
+from engram.v4_core import V4MemoryManager, SHM_NAME, SHM_SIZE
+from engram.v4_server import V4ZeroMQServer
 from multiprocessing import shared_memory
 import threading
 

@@ -1,309 +1,159 @@
-"""
-Engram Core Database Engine (Universal Production-Grade Architecture)
-Manages SQLite WAL semantic graph, schema migrations with versioning,
-ACT-R power-law decay, multi-tenant namespaces, and storage liveness.
-"""
-
-import sys
-import os
-import math
-import threading
 from pathlib import Path
-from typing import Dict, Any, List, Optional
-from concurrent.futures import ThreadPoolExecutor, TimeoutError as FutureTimeoutError
+import sqlite3
+import os
+import threading
+import sys
+import math
+from typing import Dict, Any, Optional
+from concurrent.futures import ThreadPoolExecutor
 
-def supports_extensions(db_module) -> bool:
-    if not hasattr(db_module.Connection, "enable_load_extension"):
-        return False
-    try:
-        with db_module.connect(":memory:") as conn:
-            conn.enable_load_extension(True)
-            return True
-    except (AttributeError, db_module.OperationalError, db_module.NotSupportedError):
-        return False
-
-def get_sqlite_module():
-    import sqlite3
-    if supports_extensions(sqlite3):
-        return sqlite3
-        
-    try:
-        __import__('pysqlite3')
-        sys.modules['sqlite3'] = sys.modules.pop('pysqlite3')
-        import sqlite3 as patched_sqlite3
-        return patched_sqlite3
-    except ImportError:
-        return sqlite3
-
-sqlite3 = get_sqlite_module()
-
-DB_PATH = Path(os.environ.get("ENGRAM_DB_PATH", Path.home() / ".engram" / "engram.sqlite"))
-
-_INIT_LOCK = threading.Lock()
+DB_PATH = os.path.join(os.path.expanduser("~"), ".engram", "engram_v3.db")
 _INITIALIZED_PATHS = set()
 
-def check_storage_liveness(target_path: Path, timeout_seconds: float = 1.0) -> bool:
-    """
-    Universal cross-platform storage liveness probe.
-    Executes standard os.stat inside a strict timeout thread to prevent hangs.
-    """
-    check_dir = target_path.parent
+def check_storage_liveness(path: str, timeout_seconds: float = 1.0) -> bool:
+    target_dir = os.path.dirname(path)
+    if not os.path.exists(target_dir):
+        return True
+        
+    executor = ThreadPoolExecutor(max_workers=1)
+    future = executor.submit(os.stat, target_dir)
     try:
-        check_dir.mkdir(mode=0o700, parents=True, exist_ok=True)
+        future.result(timeout=timeout_seconds)
+        return True
     except Exception:
-        pass
+        return False
+    finally:
+        executor.shutdown(wait=False, cancel_futures=True)
 
-    def _stat_probe():
-        try:
-            return check_dir.exists() and check_dir.stat() is not None
-        except Exception:
-            return False
+def init_db(target_path_str: Optional[str] = None, force: bool = False):
+    if target_path_str is None:
+        target_path_str = str(Path(os.environ.get("ENGRAM_DB_PATH", DB_PATH)).resolve())
+        
+    if not force and target_path_str in _INITIALIZED_PATHS:
+        return
+        
+    target_path = Path(target_path_str)
+    
+    if not check_storage_liveness(target_path_str):
+        raise IOError(f"Storage path {target_path.parent} is unresponsive.")
+        
+    target_path.parent.mkdir(parents=True, exist_ok=True)
+    
+    old_umask = None
+    has_umask = hasattr(os, "umask")
+    if has_umask:
+        old_umask = os.umask(0o077)
 
     try:
-        with ThreadPoolExecutor(max_workers=1) as executor:
-            future = executor.submit(_stat_probe)
-            return future.result(timeout=timeout_seconds)
-    except (FutureTimeoutError, Exception):
-        return False
-
-def init_db(force: bool = False):
-    """
-    Initializes database tables, triggers, indexes, and schema versions.
-    Thread-safe, idempotent, and uses _INITIALIZED_PATHS fast-path.
-    """
-    target_path = Path(os.environ.get("ENGRAM_DB_PATH", DB_PATH)).resolve()
-    target_path_str = str(target_path)
-    
-    with _INIT_LOCK:
-        if target_path_str in _INITIALIZED_PATHS and not force:
-            if target_path.exists():
-                return
-            else:
-                _INITIALIZED_PATHS.discard(target_path_str)
-
-        if not check_storage_liveness(target_path, timeout_seconds=1.0):
-            raise OSError(f"Storage path {target_path} is unresponsive or inaccessible.")
-
-        has_umask = hasattr(os, "umask")
-        old_umask = os.umask(0o077) if has_umask else None
-
+        conn = sqlite3.connect(target_path_str, timeout=30.0)
         try:
-            target_path.parent.mkdir(mode=0o700, parents=True, exist_ok=True)
-            conn = sqlite3.connect(target_path_str, timeout=30.0)
+            conn.execute("PRAGMA journal_mode = WAL;")
+            conn.execute("PRAGMA synchronous = NORMAL;")
+            conn.execute("PRAGMA busy_timeout = 30000;")
             
-            import time
-            import random
+            conn.execute("""
+            CREATE TABLE IF NOT EXISTS schema_version (
+                version INTEGER PRIMARY KEY,
+                applied_at TEXT
+            );
+            """)
             
-            for attempt in range(1, 8):
-                try:
-                    conn.execute("PRAGMA journal_mode = WAL;")
-                    conn.execute("PRAGMA synchronous = NORMAL;")
-                    conn.execute("PRAGMA busy_timeout = 30000;")
-                    conn.execute("PRAGMA cache_size = -64000;")
-                    conn.execute("PRAGMA mmap_size = 268435456;")
-                    
-                    def safe_power(base, exp):
-                        try:
-                            return math.pow(max(0.001, float(base)), float(exp))
-                        except Exception:
-                            return 0.0
-                            
-                    conn.create_function("POWER", 2, safe_power)
-
-                    conn.execute("BEGIN IMMEDIATE;")
-                    break
-                except Exception as e:
-                    err_str = str(e).lower()
-                    if "database" in err_str and "locked" in err_str:
-                        if attempt == 7:
-                            raise e
-                        time.sleep(0.1 + random.uniform(0, 0.1))
-                    else:
-                        raise e
+            conn.execute("""
+            CREATE TABLE IF NOT EXISTS nodes (
+                id TEXT PRIMARY KEY,
+                type TEXT DEFAULT 'memory',
+                content TEXT,
+                metadata TEXT,
+                embedding BLOB,
+                access_count INTEGER DEFAULT 0,
+                last_accessed_at TEXT DEFAULT '',
+                importance INTEGER DEFAULT 5,
+                category TEXT DEFAULT 'general',
+                project TEXT DEFAULT 'default',
+                agent TEXT DEFAULT 'system',
+                created_at TEXT DEFAULT CURRENT_TIMESTAMP,
+                updated_at TEXT DEFAULT CURRENT_TIMESTAMP
+            );
+            """)
+            
+            conn.execute("""
+            CREATE TABLE IF NOT EXISTS edges (
+                source TEXT,
+                target TEXT,
+                relation TEXT,
+                weight REAL DEFAULT 1.0,
+                project TEXT DEFAULT 'default',
+                created_at TEXT DEFAULT CURRENT_TIMESTAMP,
+                updated_at TEXT DEFAULT CURRENT_TIMESTAMP,
+                valid_from TEXT DEFAULT '',
+                valid_until TEXT DEFAULT '',
+                superseded_by TEXT DEFAULT '',
+                transaction_time TEXT DEFAULT '',
+                PRIMARY KEY (source, target, relation)
+            );
+            """)
+            
+            conn.execute("CREATE VIRTUAL TABLE IF NOT EXISTS nodes_fts USING fts5(id, content, tokenize='trigram');")
+            conn.execute("CREATE TRIGGER IF NOT EXISTS nodes_ai AFTER INSERT ON nodes BEGIN INSERT INTO nodes_fts(id, content) VALUES (new.id, new.content); END;")
+            conn.execute("CREATE TRIGGER IF NOT EXISTS nodes_au AFTER UPDATE ON nodes BEGIN DELETE FROM nodes_fts WHERE id=old.id; INSERT INTO nodes_fts(id, content) VALUES (new.id, new.content); END;")
+            conn.execute("CREATE TRIGGER IF NOT EXISTS nodes_ad AFTER DELETE ON nodes BEGIN DELETE FROM nodes_fts WHERE id=old.id; END;")
+            
+            has_vec = False
             try:
-                # Schema versioning table
-                conn.execute("""
-                CREATE TABLE IF NOT EXISTS schema_version (
-                    version INTEGER PRIMARY KEY,
-                    applied_at TEXT NOT NULL
-                );
-                """)
+                import sqlite_vec
+                conn.enable_load_extension(True)
+                sqlite_vec.load(conn)
+                conn.enable_load_extension(False)
+                has_vec = True
+            except Exception:
+                pass
 
-                # Nodes table
-                conn.execute("""
-                CREATE TABLE IF NOT EXISTS nodes (
-                    id TEXT PRIMARY KEY,
-                    type TEXT NOT NULL,
-                    content TEXT NOT NULL,
-                    created_at TEXT NOT NULL,
-                    updated_at TEXT NOT NULL,
-                    access_count INTEGER NOT NULL DEFAULT 0,
-                    last_accessed_at TEXT NOT NULL DEFAULT '',
-                    embedding BLOB,
-                    importance INTEGER NOT NULL DEFAULT 5,
-                    category TEXT NOT NULL DEFAULT 'general',
-                    project TEXT NOT NULL DEFAULT 'default',
-                    agent TEXT NOT NULL DEFAULT 'system'
-                );
-                """)
-                
-                # Edges table
-                conn.execute("""
-                CREATE TABLE IF NOT EXISTS edges (
-                    source TEXT,
-                    target TEXT,
-                    relation TEXT,
-                    weight REAL DEFAULT 1.0,
-                    created_at TEXT DEFAULT '',
-                    project TEXT NOT NULL DEFAULT 'default',
-                    valid_from TEXT DEFAULT '',
-                    valid_until TEXT DEFAULT '',
-                    superseded_by TEXT DEFAULT '',
-                    transaction_time TEXT DEFAULT CURRENT_TIMESTAMP,
-                    PRIMARY KEY (source, target, relation, project)
-                );
-                """)
-
-                # Vault file hash tracking table for incremental obsidian sync
-                conn.execute("""
-                CREATE TABLE IF NOT EXISTS vault_files (
-                    file_path TEXT PRIMARY KEY,
-                    file_hash TEXT NOT NULL,
-                    last_modified REAL NOT NULL,
-                    project TEXT NOT NULL DEFAULT 'default',
-                    synced_at TEXT NOT NULL
-                );
-                """)
-
-                # Indexes
-                conn.execute("CREATE INDEX IF NOT EXISTS idx_nodes_project ON nodes (project, category);")
-                conn.execute("CREATE INDEX IF NOT EXISTS idx_edges_lookup ON edges (source, target, project);")
-                conn.execute("CREATE INDEX IF NOT EXISTS idx_edges_target ON edges (target, project);")
-
-                # Auto-migrate edges columns if upgrading from earlier version
-                edge_cols = {c[1] for c in conn.execute("PRAGMA table_info(edges);").fetchall()}
-                if "valid_from" not in edge_cols:
-                    conn.execute("ALTER TABLE edges ADD COLUMN valid_from TEXT DEFAULT '';")
-                if "valid_until" not in edge_cols:
-                    conn.execute("ALTER TABLE edges ADD COLUMN valid_until TEXT DEFAULT '';")
-                if "superseded_by" not in edge_cols:
-                    conn.execute("ALTER TABLE edges ADD COLUMN superseded_by TEXT DEFAULT '';")
-                if "transaction_time" not in edge_cols:
-                    conn.execute("ALTER TABLE edges ADD COLUMN transaction_time TEXT DEFAULT '';")
-
-
-                # FTS5 Trigram Full-Text Index
-                conn.execute("""
-                CREATE VIRTUAL TABLE IF NOT EXISTS nodes_fts USING fts5(id, content, tokenize='trigram');
-                """)
-                conn.execute("""
-                CREATE TRIGGER IF NOT EXISTS nodes_ai AFTER INSERT ON nodes BEGIN
-                    INSERT INTO nodes_fts(id, content) VALUES (new.id, new.content);
-                END;
-                """)
-                conn.execute("""
-                CREATE TRIGGER IF NOT EXISTS nodes_au AFTER UPDATE ON nodes BEGIN
-                    DELETE FROM nodes_fts WHERE id=old.id;
-                    INSERT INTO nodes_fts(id, content) VALUES (new.id, new.content);
-                END;
-                """)
-                conn.execute("""
-                CREATE TRIGGER IF NOT EXISTS nodes_ad AFTER DELETE ON nodes BEGIN
-                    DELETE FROM nodes_fts WHERE id=old.id;
-                END;
-                """)
-
-                # Mark version 1 applied
-                conn.execute("INSERT OR IGNORE INTO schema_version (version, applied_at) VALUES (1, datetime('now'));")
-
-                # Native sqlite-vec Virtual Table & Triggers (if sqlite-vec is available)
-                has_vec = False
+            if has_vec:
                 try:
-                    import sqlite_vec
-                    conn.enable_load_extension(True)
-                    sqlite_vec.load(conn)
-                    conn.enable_load_extension(False)
-                    has_vec = True
+                    embedding_dim = int(os.environ.get("ENGRAM_EMBEDDING_DIM", "384"))
+                    conn.execute(f"CREATE VIRTUAL TABLE IF NOT EXISTS nodes_vec USING vec0(id text primary key, embedding float[{embedding_dim}]);")
+                    conn.execute("CREATE TRIGGER IF NOT EXISTS nodes_vec_ai AFTER INSERT ON nodes WHEN new.embedding IS NOT NULL BEGIN INSERT OR REPLACE INTO nodes_vec(id, embedding) VALUES (new.id, new.embedding); END;")
+                    conn.execute("CREATE TRIGGER IF NOT EXISTS nodes_vec_au AFTER UPDATE ON nodes WHEN new.embedding IS NOT NULL BEGIN DELETE FROM nodes_vec WHERE id = old.id; INSERT OR REPLACE INTO nodes_vec(id, embedding) VALUES (new.id, new.embedding); END;")
+                    conn.execute("CREATE TRIGGER IF NOT EXISTS nodes_vec_ad AFTER DELETE ON nodes BEGIN DELETE FROM nodes_vec WHERE id = old.id; END;")
                 except Exception:
                     pass
 
-                if has_vec:
-                    try:
-                        embedding_dim = int(os.environ.get("ENGRAM_EMBEDDING_DIM", "384"))
-                        conn.execute(f"""
-                        CREATE VIRTUAL TABLE IF NOT EXISTS nodes_vec USING vec0(
-                            id text primary key,
-                            embedding float[{embedding_dim}]
-                        );
-                        """)
-                        conn.execute("""
-                        CREATE TRIGGER IF NOT EXISTS nodes_vec_ai AFTER INSERT ON nodes WHEN new.embedding IS NOT NULL BEGIN
-                            INSERT OR REPLACE INTO nodes_vec(id, embedding) VALUES (new.id, new.embedding);
-                        END;
-                        """)
-                        conn.execute("""
-                        CREATE TRIGGER IF NOT EXISTS nodes_vec_au AFTER UPDATE ON nodes WHEN new.embedding IS NOT NULL BEGIN
-                            DELETE FROM nodes_vec WHERE id = old.id;
-                            INSERT OR REPLACE INTO nodes_vec(id, embedding) VALUES (new.id, new.embedding);
-                        END;
-                        """)
-                        conn.execute("""
-                        CREATE TRIGGER IF NOT EXISTS nodes_vec_ad AFTER DELETE ON nodes BEGIN
-                            DELETE FROM nodes_vec WHERE id = old.id;
-                        END;
-                        """)
-                    except Exception:
-                        pass
-
-                conn.commit()
-                _INITIALIZED_PATHS.add(target_path_str)
-            except sqlite3.Error as e:
-                conn.rollback()
-                raise e
-            finally:
-                conn.close()
+            conn.execute("INSERT OR IGNORE INTO schema_version (version, applied_at) VALUES (1, datetime('now'));")
+            conn.commit()
+            _INITIALIZED_PATHS.add(target_path_str)
+        except sqlite3.Error as e:
+            conn.rollback()
+            raise e
         finally:
-            if has_umask and old_umask is not None:
-                os.umask(old_umask)
+            conn.close()
+    finally:
+        if has_umask and old_umask is not None:
+            os.umask(old_umask)
 
 _THREAD_LOCAL = threading.local()
 
 class PooledConnection:
-    """
-    Thread-Local SQLite Connection Proxy:
-    Eliminates connection negotiation overhead and lock contention under heavy multi-threaded concurrency.
-    Preserves connection handles warm per-thread while providing safe rollback on close().
-    """
     __slots__ = ("_raw_conn", "_path_str")
-
     def __init__(self, raw_conn, path_str: str):
         object.__setattr__(self, "_raw_conn", raw_conn)
         object.__setattr__(self, "_path_str", path_str)
-
     def close(self):
-        """Safe connection release: rolls back any uncommitted transaction, preserving handle for thread."""
         try:
             if getattr(self._raw_conn, "in_transaction", False):
                 self._raw_conn.rollback()
         except Exception:
             pass
-
     def close_raw(self):
-        """Force-closes underlying raw SQLite connection."""
         try:
             self._raw_conn.close()
         except Exception:
             pass
-
     def __enter__(self):
         return self._raw_conn.__enter__()
-
     def __exit__(self, exc_type, exc_val, exc_tb):
         return self._raw_conn.__exit__(exc_type, exc_val, exc_tb)
-
     def __getattr__(self, name):
         return getattr(self._raw_conn, name)
-
     def __setattr__(self, name, value):
         if name in self.__slots__:
             object.__setattr__(self, name, value)
@@ -311,7 +161,6 @@ class PooledConnection:
             setattr(self._raw_conn, name, value)
 
 def _configure_connection(conn):
-    """Applies high-throughput WAL pragmas, custom math functions, and vector extensions."""
     conn.execute("PRAGMA journal_mode = WAL;")
     conn.execute("PRAGMA synchronous = NORMAL;")
     conn.execute("PRAGMA busy_timeout = 30000;")
@@ -319,30 +168,22 @@ def _configure_connection(conn):
     conn.execute("PRAGMA mmap_size = 268435456;")
     
     def safe_power(base, exp):
-        try:
-            return math.pow(max(0.001, float(base)), float(exp))
-        except Exception:
-            return 0.0
-            
+        try: return math.pow(max(0.001, float(base)), float(exp))
+        except Exception: return 0.0
     conn.create_function("POWER", 2, safe_power)
-
     try:
         import sqlite_vec
         conn.enable_load_extension(True)
         sqlite_vec.load(conn)
         conn.enable_load_extension(False)
-    except (ImportError, Exception):
+    except Exception:
         pass
 
 def get_db(force_new: bool = False):
-    """
-    Returns an active SQLite database connection with custom functions and WAL pragmas.
-    Uses thread-local connection pooling to eliminate connection churn under high concurrency.
-    """
     target_path = Path(os.environ.get("ENGRAM_DB_PATH", DB_PATH)).resolve()
     target_path_str = str(target_path)
     if target_path_str not in _INITIALIZED_PATHS or not target_path.exists():
-        init_db()
+        init_db(target_path_str)
 
     if force_new:
         conn = sqlite3.connect(target_path_str, timeout=30.0)
@@ -361,17 +202,15 @@ def get_db(force_new: bool = False):
     return PooledConnection(raw_conn, target_path_str)
 
 def close_thread_connections():
-    """Closes all cached connections on the current thread."""
     if hasattr(_THREAD_LOCAL, "conns"):
         for path_str, conn in list(_THREAD_LOCAL.conns.items()):
             try:
-                conn.close()
+                conn.close_raw()
             except Exception:
                 pass
         _THREAD_LOCAL.conns.clear()
 
 def optimize_and_checkpoint(conn=None) -> Dict[str, Any]:
-    """Execute WAL checkpoint, vacuum, and index optimization."""
     close_when_done = False
     if conn is None:
         conn = get_db()
