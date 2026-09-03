@@ -41,13 +41,88 @@ Add to your `claude_desktop_config.json`:
 }
 ```
 
-### 2. Install via Smithery
+### 2. Cursor IDE
+Add to `~/.cursor/mcp.json` or configure in **Cursor Settings > Features > MCP Servers**:
+```json
+{
+  "mcpServers": {
+    "engram": {
+      "command": "uvx",
+      "args": ["engram-alpha-mcp"]
+    }
+  }
+}
+```
+
+### 3. Windsurf Editor
+Add to `~/.codeium/windsurf/mcp_config.json`:
+```json
+{
+  "mcpServers": {
+    "engram": {
+      "command": "uvx",
+      "args": ["engram-alpha-mcp"]
+    }
+  }
+}
+```
+
+### 4. Cline & Roo Code (VS Code)
+Add to your `cline_mcp_settings.json` or `roo_code_mcp_settings.json`:
+```json
+{
+  "mcpServers": {
+    "engram": {
+      "command": "uvx",
+      "args": ["engram-alpha-mcp"]
+    }
+  }
+}
+```
+
+### 5. Install via Smithery
 ```bash
 npx -y @smithery/cli install engram-alpha-mcp --client claude
 ```
 
-### 3. Cursor & Windsurf
-Add an MCP server with command `uvx` and args `["engram-alpha-mcp"]`.
+### 6. Interactive 5-Second Terminal Demo
+Clone and test locally with live latency metrics:
+```bash
+git clone https://github.com/lalithbuilds/engram-alpha-mcp.git
+cd engram-alpha-mcp
+python examples/quickstart_demo.py
+```
+
+---
+
+## 🔄 Drop-in Replacement for Anthropic `server-memory` & Mem0
+
+If you are currently using `@modelcontextprotocol/server-memory` or a cloud-based memory SaaS, upgrade in 10 seconds:
+
+**Before (Anthropic `server-memory` — unindexed flat JSON file):**
+```json
+{
+  "mcpServers": {
+    "memory": {
+      "command": "npx",
+      "args": ["-y", "@modelcontextprotocol/server-memory"]
+    }
+  }
+}
+```
+
+**After (Engram Alpha — 4-Way RRF Hybrid Search + SQLite WAL + Apple AMX):**
+```json
+{
+  "mcpServers": {
+    "memory": {
+      "command": "uvx",
+      "args": ["engram-alpha-mcp"]
+    }
+  }
+}
+```
+*Engram Alpha provides compatible memory primitives (`save_memory`, `search_memory`, `delete_memory`, `query_graph`) while providing sub-millisecond retrieval, exact code token matching, and bi-temporal graph navigation.*
 
 ---
 
@@ -401,6 +476,12 @@ Engram Alpha is validated using two benchmark suites:
 * **100% On-Chip:** Zero telemetry, zero analytics, zero external API dependencies required for standard operation.
 * **POSIX Security:** Database files are initialized with strict `0600` / `0700` user permissions.
 * **No Cloud Vendor Lock-in:** All memories, relational graphs, and embeddings reside in a single portable SQLite file that you own.
+
+---
+
+## 🏷️ Search & Discoverability Index
+
+`mcp` • `model-context-protocol` • `mcp-server` • `claude-desktop` • `cursor` • `cursor-mcp` • `windsurf` • `cline` • `roo-code` • `zed` • `memory` • `long-term-memory` • `ai-memory` • `agentic-memory` • `sqlite` • `sqlite-vec` • `fastembed` • `onnx` • `apple-silicon` • `amx` • `accelerate-framework` • `vector-search` • `hybrid-search` • `rrf` • `reciprocal-rank-fusion` • `fts5` • `bm25` • `knowledge-graph` • `bi-temporal-graph` • `obsidian` • `obsidian-mcp` • `local-first` • `sovereign-ai` • `mem0-alternative` • `zep-alternative` • `ai-agents` • `autonomous-agents`
 
 ---
 
