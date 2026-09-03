@@ -1,4 +1,4 @@
-# 🧠 Engram Alpha: Sovereign Cognitive Graph & RRF Memory Engine
+# 🧠 Engram Alpha MCP: Sovereign Cognitive Graph & Memory Engine for AI Agents
 
 <p align="center">
   <a href="https://github.com/lalithbuilds/engram-alpha-mcp"><img src="https://img.shields.io/badge/python-3.10+-blue.svg" alt="Python 3.10+"></a>
@@ -14,7 +14,7 @@
   <img src="assets/demo.gif" alt="Engram Alpha Live Terminal Demo" width="850px" style="border-radius: 12px; box-shadow: 0 10px 30px rgba(0,0,0,0.3);" />
 </p>
 
-> **Engram Alpha** is a zero-dependency, production-grade cognitive memory substrate and Model Context Protocol (MCP) server for local AI coding agents (Claude Desktop, Cursor, Windsurf, Cline), autonomous swarms, and cloud web agents (ChatGPT, Claude, Gemini). It unifies high-dimensional vector embeddings, bi-temporal knowledge graphs, trigram full-text search, and cognitive science decay modeling into a single sovereign on-device database.
+> **Engram Alpha MCP** is a zero-cloud, production-grade cognitive memory substrate and Model Context Protocol (MCP) server for local AI coding agents (Claude Desktop, Cursor, Windsurf, Cline), autonomous swarms, and cloud web agents (ChatGPT, Claude, Gemini). It unifies high-dimensional vector embeddings, bi-temporal knowledge graphs, trigram full-text search, and cognitive science decay modeling into a single sovereign on-device database.
 >
 > 💡 *Looking for a zero-dependency, pure Python standard library edition? Check out [**Engram MCP (v1)**](https://github.com/lalithbuilds/engram-mcp) — zero pip installs, zero binary dependencies, pure Python 3 stdlib SQLite.*
 
