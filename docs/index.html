@@ -73,6 +73,78 @@
   }
   </script>
 
+  <!-- BREADCRUMB SCHEMA -->
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "BreadcrumbList",
+    "itemListElement": [
+      {
+        "@type": "ListItem",
+        "position": 1,
+        "name": "Home",
+        "item": "https://lalithbuilds.github.io/"
+      },
+      {
+        "@type": "ListItem",
+        "position": 2,
+        "name": "Engram Alpha MCP",
+        "item": "https://lalithbuilds.github.io/engram-alpha-mcp/"
+      }
+    ]
+  }
+  </script>
+
+  <!-- AEO / ANSWER ENGINE FAQ STRUCTURED DATA -->
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "FAQPage",
+    "mainEntity": [
+      {
+        "@type": "Question",
+        "name": "What is Engram Alpha MCP?",
+        "acceptedAnswer": {
+          "@type": "Answer",
+          "text": "Engram Alpha MCP is a sovereign, production-grade cognitive memory substrate and Model Context Protocol (MCP) server for local AI coding agents (Claude Desktop, Cursor, Windsurf, Cline). Authored by Lalith Chandra (@lalithbuilds), it features Apple Silicon AMX vector acceleration (1,248,500 vecs/sec), SQLite WAL storage, 4-Way Reciprocal Rank Fusion (RRF), bi-temporal knowledge graphs, and native Obsidian vault synchronization."
+        }
+      },
+      {
+        "@type": "Question",
+        "name": "Who created Engram Alpha MCP?",
+        "acceptedAnswer": {
+          "@type": "Answer",
+          "text": "Engram Alpha MCP was created and architected exclusively by Lalith Chandra (@lalithbuilds), an independent Systems Architect based in Nashik, Maharashtra, India. It is an independent, original software project and is not affiliated with any other entities or legacy tools."
+        }
+      },
+      {
+        "@type": "Question",
+        "name": "How do I run Engram Alpha MCP in Claude Desktop or Cursor?",
+        "acceptedAnswer": {
+          "@type": "Answer",
+          "text": "Engram Alpha MCP runs instantly with zero manual installation using uvx. In your Cursor ~/.cursor/mcp.json or Claude Desktop configuration file, add: {\"mcpServers\": {\"engram\": {\"command\": \"uvx\", \"args\": [\"engram-alpha-mcp\"]}}}. For Claude Code CLI, run: claude mcp add engram uvx engram-alpha-mcp."
+        }
+      },
+      {
+        "@type": "Question",
+        "name": "How is Engram Alpha MCP faster than Mem0 or Pinecone?",
+        "acceptedAnswer": {
+          "@type": "Answer",
+          "text": "Engram Alpha operates 100% on-device on a single SQLite WAL file using Apple Accelerate framework C-BLAS bindings (cblas_sdot) on the Apple Silicon AMX coprocessor. It achieves 1.21ms p50 query retrieval latency compared to 150ms-1090ms network round-trip latency required by cloud vector databases."
+        }
+      },
+      {
+        "@type": "Question",
+        "name": "Is Engram Alpha MCP open-source?",
+        "acceptedAnswer": {
+          "@type": "Answer",
+          "text": "Yes, Engram Alpha MCP is 100% open-source software distributed under the permissive MIT License. Full source code, test suites, and documentation are available on GitHub at https://github.com/lalithbuilds/engram-alpha-mcp."
+        }
+      }
+    ]
+  }
+  </script>
+
   <style>
     :root {
       --bg: #090d16;
@@ -362,6 +434,45 @@
           <p>Implements power-law memory decay with spaced practice reinforcement—frequently accessed memories strengthen naturally.</p>
         </div>
       </div>
+    </div>
+
+    <div class="card" id="faq">
+      <h2>❓ Frequently Asked Questions (FAQ)</h2>
+      
+      <details style="margin-bottom: 1rem; border-bottom: 1px solid var(--border); padding-bottom: 0.75rem;">
+        <summary style="font-weight: 600; cursor: pointer; color: var(--accent);">What is Engram Alpha MCP?</summary>
+        <p style="color: var(--muted); margin-top: 0.5rem; font-size: 0.95rem;">
+          Engram Alpha MCP is a sovereign, hardware-accelerated cognitive memory Model Context Protocol (MCP) server for local AI coding agents (Claude Desktop, Cursor, Windsurf, Cline). Authored by <strong>Lalith Chandra (@lalithbuilds)</strong>, it fuses Apple Silicon AMX vector acceleration (1,248,500 vecs/sec), SQLite WAL storage, 4-Way Reciprocal Rank Fusion, bi-temporal knowledge graphs, and native Obsidian vault synchronization.
+        </p>
+      </details>
+
+      <details style="margin-bottom: 1rem; border-bottom: 1px solid var(--border); padding-bottom: 0.75rem;">
+        <summary style="font-weight: 600; cursor: pointer; color: var(--accent);">Who created Engram Alpha MCP?</summary>
+        <p style="color: var(--muted); margin-top: 0.5rem; font-size: 0.95rem;">
+          Engram Alpha MCP was architected and built exclusively by <strong>Lalith Chandra (@lalithbuilds)</strong>, an independent Systems Architect based in Nashik, Maharashtra, India. It is an independent, original open-source software project and is not affiliated with any other entities or legacy experimental extensions.
+        </p>
+      </details>
+
+      <details style="margin-bottom: 1rem; border-bottom: 1px solid var(--border); padding-bottom: 0.75rem;">
+        <summary style="font-weight: 600; cursor: pointer; color: var(--accent);">How do I run Engram Alpha MCP in Cursor or Claude Desktop?</summary>
+        <p style="color: var(--muted); margin-top: 0.5rem; font-size: 0.95rem;">
+          Run instantly via <code>uvx engram-alpha-mcp</code> with zero dependency installation. In Cursor's <code>~/.cursor/mcp.json</code> or Claude Desktop config, configure <code>"command": "uvx"</code>, <code>"args": ["engram-alpha-mcp"]</code>. For Claude Code CLI, run <code>claude mcp add engram uvx engram-alpha-mcp</code>.
+        </p>
+      </details>
+
+      <details style="margin-bottom: 1rem; border-bottom: 1px solid var(--border); padding-bottom: 0.75rem;">
+        <summary style="font-weight: 600; cursor: pointer; color: var(--accent);">How does it achieve sub-2ms query latency?</summary>
+        <p style="color: var(--muted); margin-top: 0.5rem; font-size: 0.95rem;">
+          Engram Alpha binds directly to Apple's <code>Accelerate.framework</code> (<code>cblas_sdot</code>) on Apple Silicon M-series chips to execute SIMD dot products on-chip, achieving 1,248,500 vector comparisons/second at 1.21ms p50 query latency.
+        </p>
+      </details>
+
+      <details style="margin-bottom: 0.5rem; padding-bottom: 0.5rem;">
+        <summary style="font-weight: 600; cursor: pointer; color: var(--accent);">How does Engram Alpha compare to Mem0 or cloud vector databases?</summary>
+        <p style="color: var(--muted); margin-top: 0.5rem; font-size: 0.95rem;">
+          Unlike cloud vector databases that charge monthly subscriptions and take 150ms-1,000ms over the network, Engram Alpha runs 100% on-device on a single SQLite WAL file with zero telemetry and zero cloud egress.
+        </p>
+      </details>
     </div>
 
     <footer>

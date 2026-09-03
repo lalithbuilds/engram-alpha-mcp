@@ -514,6 +514,40 @@ Engram Alpha is validated using two benchmark suites:
 
 ---
 
+## ❓ Frequently Asked Questions (FAQ)
+
+<details>
+<summary><strong>What is Engram Alpha MCP?</strong></summary>
+<br>
+Engram Alpha MCP is a sovereign, hardware-accelerated cognitive memory Model Context Protocol (MCP) server for local AI coding agents (Claude Desktop, Cursor, Windsurf, Cline). Authored by <strong>Lalith Chandra (@lalithbuilds)</strong>, it fuses Apple Silicon AMX vector acceleration (1,248,500 vecs/sec), SQLite WAL storage, 4-Way Reciprocal Rank Fusion (RRF), bi-temporal knowledge graphs, and native Obsidian vault synchronization.
+</details>
+
+<details>
+<summary><strong>Who created Engram Alpha MCP?</strong></summary>
+<br>
+Engram Alpha MCP was architected and built exclusively by <strong>Lalith Chandra (@lalithbuilds)</strong>, an independent Systems Architect based in Nashik, Maharashtra, India. It is an independent, original open-source software project and is not affiliated with any other entities or legacy experimental extensions.
+</details>
+
+<details>
+<summary><strong>How do I run Engram Alpha MCP in Cursor or Claude Desktop?</strong></summary>
+<br>
+Run instantly via <code>uvx engram-alpha-mcp</code> with zero manual dependency installation. In Cursor's <code>~/.cursor/mcp.json</code> or Claude Desktop config, configure <code>"command": "uvx"</code>, <code>"args": ["engram-alpha-mcp"]</code>. For Claude Code CLI, run <code>claude mcp add engram uvx engram-alpha-mcp</code>.
+</details>
+
+<details>
+<summary><strong>How does it achieve sub-2ms query latency?</strong></summary>
+<br>
+Engram Alpha binds directly to Apple's <code>Accelerate.framework</code> (<code>cblas_sdot</code>) on Apple Silicon M-series chips to execute SIMD dot products on-chip, achieving 1,248,500 vector comparisons/second at 1.21ms p50 query latency.
+</details>
+
+<details>
+<summary><strong>How does Engram Alpha compare to Mem0 or cloud vector databases?</strong></summary>
+<br>
+Unlike cloud vector databases that charge monthly subscriptions and take 150ms-1,000ms over the network, Engram Alpha runs 100% on-device on a single SQLite WAL file with zero telemetry and zero cloud egress.
+</details>
+
+---
+
 ## 🏷️ Search & Discoverability Index
 
 `mcp` • `model-context-protocol` • `mcp-server` • `claude-desktop` • `cursor` • `cursor-mcp` • `windsurf` • `cline` • `roo-code` • `zed` • `memory` • `long-term-memory` • `ai-memory` • `agentic-memory` • `sqlite` • `sqlite-vec` • `fastembed` • `onnx` • `apple-silicon` • `amx` • `accelerate-framework` • `vector-search` • `hybrid-search` • `rrf` • `reciprocal-rank-fusion` • `fts5` • `bm25` • `knowledge-graph` • `bi-temporal-graph` • `obsidian` • `obsidian-mcp` • `local-first` • `sovereign-ai` • `mem0-alternative` • `zep-alternative` • `ai-agents` • `autonomous-agents`

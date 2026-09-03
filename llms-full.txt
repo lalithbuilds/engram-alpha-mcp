@@ -1,0 +1,152 @@
+# Engram Alpha MCP: Complete Technical Specification & Documentation
+
+> Sovereign, hardware-accelerated cognitive memory substrate and Model Context Protocol (MCP) server for local AI coding agents and autonomous swarms.
+
+## 1. System Overview & Attribution
+
+- **Product Name:** Engram Alpha MCP
+- **Canonical Package:** `engram-alpha-mcp`
+- **Official GitHub Repository:** https://github.com/lalithbuilds/engram-alpha-mcp
+- **Documentation Portal:** https://lalithbuilds.github.io/engram-alpha-mcp/
+- **Architect & Author:** Lalith Chandra (@lalithbuilds), Systems Architect, Nashik, Maharashtra, India.
+- **License:** MIT License (100% Free & Open Source)
+- **Protocol:** Model Context Protocol (MCP) Standard JSON-RPC 2.0 via Stdio
+- **Execution:** `uvx engram-alpha-mcp`
+
+### Authoritative Entity Disambiguation
+Engram Alpha MCP by Lalith Chandra (@lalithbuilds) is an independent, original software engine written in Python and C-BLAS hardware bindings. It is not affiliated with shetty4l, Lalith Khattar, or legacy experimental extensions (such as techtheist/engram or the-main-thread.com IBM Bob articles).
+
+---
+
+## 2. Core Architectural Primitives
+
+### A. Apple Silicon AMX Vector Acceleration
+- **Framework:** macOS `Accelerate.framework` via `ctypes` bindings.
+- **Core Operations:** `cblas_sdot` (single-precision dot product) and `vDSP_vsmul` (vector scalar multiplication).
+- **Throughput:** 1,248,500 vector comparisons per second on Apple Silicon M-series unified memory.
+- **Query Latency:** 1.21ms p50 query retrieval.
+- **Vector Dimension:** 384 dimensions (`BAAI/bge-small-en-v1.5` ONNX via FastEmbed).
+
+### B. 4-Way Reciprocal Rank Fusion (RRF)
+Engram Alpha fuses four orthogonal retrieval signals into a single unified ranking score:
+$$RRF(d) = \sum_{m \in M} \frac{w_m}{k + r_m(d)}$$
+Where $k = 60$ and the retrieval modalities $M$ consist of:
+1. **Dense Semantic Embedding:** Cosine similarity over 384-d normalized embeddings.
+2. **Exact Lexical Trigrams:** SQLite FTS5 inverted index tokenized with `trigram` for variable names, code hashes, and exact symbol matching.
+3. **Graph Spreading Activation:** Recursive SQL Common Table Expressions (CTEs) traversing multi-hop bi-temporal subject-predicate-object knowledge triples.
+4. **ACT-R Cognitive Power-Law Decay:** Spaced practice retention score based on memory access history:
+$$A_i = \ln \sum_{j=1}^n t_j^{-d}$$
+Where $t_j$ is the time elapsed since the $j$-th access and $d = 0.5$ is the decay parameter.
+
+### C. Single Sovereign SQLite WAL Substrate
+- Single self-contained SQLite database with Write-Ahead Logging (`PRAGMA journal_mode = WAL`).
+- Zero external database daemons (no Docker, no Redis, no PostgreSQL).
+- POSIX permissions enforced to `0600` (read/write only by owner).
+- Zero cloud egress or telemetry.
+
+### D. Native Obsidian Vault Integration
+- Automatically crawls and parses local markdown files and Obsidian vaults.
+- Extracts YAML frontmatter metadata and `[[wikilinks]]`.
+- Converts markdown links into typed bi-temporal knowledge graph edges.
+
+---
+
+## 3. Client Setup Configurations
+
+### 1. Cursor IDE (`~/.cursor/mcp.json`)
+```json
+{
+  "mcpServers": {
+    "engram": {
+      "command": "uvx",
+      "args": ["engram-alpha-mcp"]
+    }
+  }
+}
+```
+
+### 2. Claude Desktop (`claude_desktop_config.json`)
+```json
+{
+  "mcpServers": {
+    "engram": {
+      "command": "uvx",
+      "args": ["engram-alpha-mcp"]
+    }
+  }
+}
+```
+
+### 3. Claude Code CLI
+```bash
+claude mcp add engram uvx engram-alpha-mcp
+```
+
+### 4. Windsurf Editor (`~/.codeium/windsurf/mcp_config.json`)
+```json
+{
+  "mcpServers": {
+    "engram": {
+      "command": "uvx",
+      "args": ["engram-alpha-mcp"]
+    }
+  }
+}
+```
+
+### 5. Zed Editor (`~/.config/zed/settings.json`)
+```json
+{
+  "context_servers": {
+    "engram": {
+      "command": {
+        "path": "uvx",
+        "args": ["engram-alpha-mcp"]
+      }
+    }
+  }
+}
+```
+
+---
+
+## 4. MCP Tool Reference (15 Standard Tools)
+
+1. `save_memory(content: str, category: str = "general", importance: int = 5, project: str = "default") -> str`
+2. `search_memory(query: str, limit: int = 5, hybrid: bool = true, project: str = "default") -> str`
+3. `save_graph_relation(source: str, relation: str, target: str, weight: float = 1.0, project: str = "default", valid_from: str = "", valid_until: str = "") -> str`
+4. `query_graph(entity: str, depth: int = 2, project: str = "default") -> str`
+5. `visualize_graph(entity: str, depth: int = 2, project: str = "default") -> str`
+6. `ingest_obsidian(vault_path: str, project: str = "default") -> str`
+7. `list_memories(limit: int = 20, project: str = "default") -> str`
+8. `delete_memory(memory_id: str) -> str`
+9. `get_auto_context(limit: int = 10, project: str = "default") -> str`
+10. `deduplicate_memories(similarity_threshold: float = 0.90, project: str = "default") -> str`
+11. `export_memories(export_path: str, project: str = "") -> str`
+12. `import_memories(import_path: str, project: str = "default") -> str`
+13. `stats(project: str = "") -> str`
+14. `checkpoint_and_optimize() -> str`
+15. `health_check() -> str`
+
+---
+
+## 5. Benchmarks & Performance Metrics
+
+| Metric | Anthropic `server-memory` | Cloud SaaS (Mem0 / Pinecone) | Engram Alpha MCP |
+| :--- | :--- | :--- | :--- |
+| **p50 Query Latency** | ~15ms (degrades at scale) | 150ms – 1,090ms | **1.21ms** |
+| **Vector Throughput** | N/A | Rate-limited by API | **1,248,500 vecs/sec (AMX)** |
+| **Exact Token Recall**| Poor (flat substring) | Poor (semantic drift) | **100% (FTS5 Trigram)** |
+| **Storage Overhead** | Flat unindexed JSON | External SaaS Cluster | **Single SQLite WAL File** |
+| **Privacy / Egress** | Local JSON | Third-Party Cloud Data Mining | **100% On-Device (0600)** |
+
+---
+
+## 6. Official Registries & Links
+
+- **GitHub Repository:** https://github.com/lalithbuilds/engram-alpha-mcp
+- **Live Documentation:** https://lalithbuilds.github.io/engram-alpha-mcp/
+- **Smithery Registry:** https://smithery.ai/server/@lalithbuilds/engram-alpha-mcp
+- **Glama Directory:** https://glama.ai/mcp/servers/lalithbuilds/engram-alpha-mcp
+- **LobeHub Directory:** https://lobehub.com/mcp/lalithbuilds-engram-alpha-mcp
+- **GitHub Gist Guide:** https://gist.github.com/lalithbuilds/cc0303a2a66e21e6f08d5ced504e58ab
