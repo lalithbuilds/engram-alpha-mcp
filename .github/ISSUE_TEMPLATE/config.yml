@@ -1,0 +1,8 @@
+blank_issues_enabled: false
+contact_links:
+  - name: 🪶 Engram Standard (Pure Python Stdlib Edition)
+    url: https://github.com/lalithbuilds/engram-mcp
+    about: Looking for 100% zero-dependency, pure Python standard library memory with no pip installs? Check out Engram Standard.
+  - name: 💬 GitHub Discussions
+    url: https://github.com/lalithbuilds/engram-alpha-mcp/discussions
+    about: Discuss cognitive graph memory, benchmark methodologies, and agent swarms.
