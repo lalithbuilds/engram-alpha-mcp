@@ -1,13 +1,20 @@
 # 🧠 Engram Alpha: Sovereign Cognitive Graph & RRF Memory Engine
 
-[![Python 3.10+](https://img.shields.io/badge/python-3.10+-blue.svg)](https://www.python.org/downloads/)
-[![License: MIT](https://img.shields.io/badge/License-MIT-green.svg)](https://opensource.org/licenses/MIT)
-[![100% On-Chip](https://img.shields.io/badge/Security-100%25_On--Chip_Sovereign-purple.svg)]()
-[![Hardware Acceleration](https://img.shields.io/badge/Compute-AMX_%2F_C--BLAS_Accelerated-orange.svg)]()
-[![MCP Compliant](https://img.shields.io/badge/MCP-Standard_Compliant-cyan.svg)](https://modelcontextprotocol.io/)
-[![Storage: SQLite WAL](https://img.shields.io/badge/Storage-Zero--Config_SQLite_WAL-blueviolet.svg)]()
+<p align="center">
+  <a href="https://github.com/lalithbuilds/engram-alpha-mcp"><img src="https://img.shields.io/badge/python-3.10+-blue.svg" alt="Python 3.10+"></a>
+  <a href="https://opensource.org/licenses/MIT"><img src="https://img.shields.io/badge/License-MIT-green.svg" alt="MIT License"></a>
+  <a href="https://github.com/lalithbuilds/engram-alpha-mcp/actions"><img src="https://github.com/lalithbuilds/engram-alpha-mcp/actions/workflows/ci.yml/badge.svg" alt="CI Status"></a>
+  <a href="https://github.com/lalithbuilds/engram-alpha-mcp/releases/tag/v2.1.0"><img src="https://img.shields.io/badge/Release-v2.1.0-blueviolet.svg" alt="Release"></a>
+  <a href="https://smithery.ai/server/@lalithbuilds/engram-alpha-mcp"><img src="https://smithery.ai/badge/@lalithbuilds/engram-alpha-mcp" alt="Smithery Badge"></a>
+  <a href="https://glama.ai/mcp/servers/lalithbuilds/engram-alpha-mcp"><img src="https://glama.ai/mcp/servers/lalithbuilds/engram-alpha-mcp/badges/score.svg" alt="Glama Score"></a>
+  <a href="https://github.com/lalithbuilds/engram-alpha-mcp"><img src="https://img.shields.io/github/stars/lalithbuilds/engram-alpha-mcp?style=social" alt="GitHub Stars"></a>
+</p>
 
-> **Engram Alpha** is a zero-dependency, production-grade cognitive memory substrate and Model Context Protocol (MCP) server for local AI coding agents, autonomous swarms, and cloud web agents (ChatGPT, Claude, Gemini). It unifies high-dimensional vector embeddings, bi-temporal knowledge graphs, trigram full-text search, and cognitive science decay modeling into a single sovereign on-device database.
+<p align="center">
+  <img src="assets/demo.gif" alt="Engram Alpha Live Terminal Demo" width="850px" style="border-radius: 12px; box-shadow: 0 10px 30px rgba(0,0,0,0.3);" />
+</p>
+
+> **Engram Alpha** is a zero-dependency, production-grade cognitive memory substrate and Model Context Protocol (MCP) server for local AI coding agents (Claude Desktop, Cursor, Windsurf, Cline), autonomous swarms, and cloud web agents (ChatGPT, Claude, Gemini). It unifies high-dimensional vector embeddings, bi-temporal knowledge graphs, trigram full-text search, and cognitive science decay modeling into a single sovereign on-device database.
 
 ---
 
@@ -482,6 +489,16 @@ Engram Alpha is validated using two benchmark suites:
 ## 🏷️ Search & Discoverability Index
 
 `mcp` • `model-context-protocol` • `mcp-server` • `claude-desktop` • `cursor` • `cursor-mcp` • `windsurf` • `cline` • `roo-code` • `zed` • `memory` • `long-term-memory` • `ai-memory` • `agentic-memory` • `sqlite` • `sqlite-vec` • `fastembed` • `onnx` • `apple-silicon` • `amx` • `accelerate-framework` • `vector-search` • `hybrid-search` • `rrf` • `reciprocal-rank-fusion` • `fts5` • `bm25` • `knowledge-graph` • `bi-temporal-graph` • `obsidian` • `obsidian-mcp` • `local-first` • `sovereign-ai` • `mem0-alternative` • `zep-alternative` • `ai-agents` • `autonomous-agents`
+
+---
+
+## 🌟 Stargazers Over Time
+
+<p align="center">
+  <a href="https://star-history.com/#lalithbuilds/engram-alpha-mcp&Date">
+    <img src="https://api.star-history.com/svg?repos=lalithbuilds/engram-alpha-mcp&type=Date" alt="Star History Chart" width="750" />
+  </a>
+</p>
 
 ---
 

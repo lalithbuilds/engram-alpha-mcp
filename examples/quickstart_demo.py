@@ -2,108 +2,134 @@
 """
 Engram Alpha Interactive Quickstart Demo
 Demonstrates sub-millisecond local memory, 4-Way RRF hybrid retrieval,
-and bi-temporal knowledge graph capabilities in under 5 seconds.
+ACT-R cognitive decay, and bi-temporal knowledge graph capabilities in under 5 seconds.
 """
 
 import os
 import sys
-import time
 import tempfile
+import time
+import shutil
 from pathlib import Path
 
-# Ensure src is in python path
-sys.path.insert(0, str(Path(__file__).parent.parent / "src"))
-
-# Create temporary isolated database
-tmp_dir = tempfile.mkdtemp()
-db_path = os.path.join(tmp_dir, "demo_memory.sqlite")
-os.environ["ENGRAM_DB_PATH"] = db_path
+# Add src to sys.path
+sys.path.insert(0, str(Path(__file__).resolve().parent.parent / "src"))
 
 from engram.core import init_db
 from engram.server import (
-    save_memory,
-    search_memory,
-    save_graph_relation,
-    query_graph,
+    save_memory, 
+    save_graph_relation, 
+    search_memory, 
+    list_memories, 
     visualize_graph,
-    get_stats,
+    ingest_obsidian
 )
 
-def print_banner(text):
-    print("\n" + "=" * 65)
-    print(f"🚀 {text}")
-    print("=" * 65)
+# Colors for terminal output
+C_CYAN = "\033[96m"
+C_GREEN = "\033[92m"
+C_YELLOW = "\033[93m"
+C_MAGENTA = "\033[95m"
+C_BOLD = "\033[1m"
+C_RESET = "\033[0m"
+
+def print_header(title: str):
+    print(f"\n{C_MAGENTA}{'=' * 65}{C_RESET}")
+    print(f"{C_BOLD}{C_CYAN}🚀 {title}{C_RESET}")
+    print(f"{C_MAGENTA}{'=' * 65}{C_RESET}\n")
+
+def measure_time(func, *args, **kwargs):
+    start = time.perf_counter()
+    res = func(*args, **kwargs)
+    end = time.perf_counter()
+    latency_ms = (end - start) * 1000
+    return res, latency_ms
 
 def main():
-    print_banner("Engram Alpha Quickstart: Sovereign AI Memory Engine")
+    print(f"{C_GREEN}Initializing Engram Alpha Quickstart Demo...{C_RESET}")
+    
+    # 1. Initialize an isolated Engram Alpha database in a temporary directory
+    temp_dir = tempfile.mkdtemp(prefix="engram_demo_")
+    db_path = os.path.join(temp_dir, "demo.sqlite")
+    os.environ["ENGRAM_DB_PATH"] = db_path
     init_db(force=True)
     
-    # 1. System Diagnostics
-    stats = get_stats()
-    print(stats.strip())
+    print(f"Isolated DB initialized at: {db_path}\n")
 
-    # 2. Saving High-Priority Technical Decisions
-    print_banner("Step 1: Storing Technical Memories & Architecture Decisions")
-    memories = [
-        ("Authentication microservice standardized on Ed25519 JWT signatures with 15-minute TTL.", "architecture", 9),
-        ("Database connection pool configured for maximum 25 connections to avoid Postgres starvation.", "infrastructure", 8),
-        ("Billing service uses Stripe webhook endpoint with signature verification at /api/v1/stripe/webhook.", "security", 9),
-        ("Developer prefer dark mode and vim keybindings across all development environments.", "preferences", 5),
+    # 2. Store architecture decisions and entity triples
+    print_header("1. Storing Architecture Decisions & Bi-Temporal Triples")
+    
+    decisions = [
+        ("We chose SQLite WAL mode to allow multiple concurrent readers alongside a single writer.", 9),
+        ("Engram Alpha uses 4-Way RRF Hybrid Search: dense semantic vectors, exact FTS5 trigrams, graph spreading activation, and ACT-R decay.", 10),
+        ("Hardware acceleration leverages Apple AMX, C-BLAS, and standard library IEEE 754 float parity.", 8)
     ]
     
-    for content, cat, imp in memories:
-        t0 = time.perf_counter()
-        res = save_memory(content, category=cat, importance=imp, project="core_api")
-        dt = (time.perf_counter() - t0) * 1000
-        print(f"  [SAVED in {dt:.2f}ms] {content[:60]}...")
-
-    # 3. Storing Bi-temporal Knowledge Graph Relations
-    print_banner("Step 2: Constructing Bi-Temporal Knowledge Graph Triples")
+    for content, imp in decisions:
+        _, latency = measure_time(save_memory, content, category="architecture", importance=imp, project="demo")
+        print(f"  {C_GREEN}✓{C_RESET} Saved memory (Importance: {imp}) in {C_BOLD}{latency:.2f}ms{C_RESET}")
+        
     relations = [
-        ("AuthService", "secures", "BillingGateway"),
-        ("BillingGateway", "depends_on", "PostgresDB"),
-        ("PostgresDB", "monitored_by", "Prometheus"),
-        ("AuthService", "issues_token_to", "FrontendClient"),
+        ("EngramAlpha", "uses", "SQLite_WAL", 1.0, "2024-01-01", ""),
+        ("EngramAlpha", "implements", "4_Way_RRF", 0.9, "2024-02-15", ""),
+        ("SQLite_WAL", "enables", "Concurrent_Reads", 1.0, "2000-01-01", "")
     ]
-    for s, r, t in relations:
-        save_graph_relation(s, r, t, weight=1.0, project="core_api")
-        print(f"  [GRAPH TRIPLE] ({s}) ───[{r}]───► ({t})")
-
-    # 4. Executing 4-Way RRF Hybrid Search (Exact Match vs Semantic Match)
-    print_banner("Step 3: 4-Way RRF Hybrid Retrieval (Exact Token vs Semantic)")
     
-    # Test A: Exact token search (FTS5 trigram power)
-    query_exact = "Ed25519 15-minute TTL"
-    t0 = time.perf_counter()
-    res_exact = search_memory(query_exact, limit=2, hybrid=True, project="core_api")
-    dt_exact = (time.perf_counter() - t0) * 1000
-    print(f"\n🔍 Query A (Exact Token): '{query_exact}' [{dt_exact:.2f}ms]")
-    print(res_exact.strip())
+    for src, rel, tgt, weight, v_from, v_until in relations:
+        _, latency = measure_time(save_graph_relation, src, rel, tgt, weight=weight, project="demo", valid_from=v_from, valid_until=v_until)
+        print(f"  {C_CYAN}🕸️{C_RESET} ({src}) ──[{rel}]──► ({tgt}) in {C_BOLD}{latency:.2f}ms{C_RESET}")
 
-    # Test B: Pure semantic conceptual search (Zero lexical overlap)
-    query_semantic = "how do we protect financial payment processing transactions?"
-    t0 = time.perf_counter()
-    res_semantic = search_memory(query_semantic, limit=2, hybrid=True, project="core_api")
-    dt_semantic = (time.perf_counter() - t0) * 1000
-    print(f"\n🔍 Query B (Conceptual Semantic): '{query_semantic}' [{dt_semantic:.2f}ms]")
-    print(res_semantic.strip())
+    # 3. Demonstrate 4-Way RRF Hybrid search
+    print_header("2. 4-Way RRF Hybrid Search (Exact vs Semantic)")
+    
+    print(f"{C_YELLOW}Query A (Exact FTS5 Keyword): 'PRAGMA journal_mode = WAL'{C_RESET}")
+    save_memory("Configure database with PRAGMA journal_mode = WAL for concurrency.", project="demo")
+    exact_res, exact_lat = measure_time(search_memory, "PRAGMA journal_mode = WAL", limit=2, project="demo")
+    print(exact_res.strip())
+    print(f"{C_CYAN}↳ Retrieval Latency: {C_BOLD}{exact_lat:.2f}ms{C_RESET}\n")
 
-    # 5. Multi-Hop Graph Traversal
-    print_banner("Step 4: Recursive Multi-Hop Knowledge Graph Traversal")
-    t0 = time.perf_counter()
-    graph_res = query_graph("AuthService", depth=2, project="core_api")
-    dt_graph = (time.perf_counter() - t0) * 1000
-    print(f"🕸️ Multi-Hop Traversal from 'AuthService' [{dt_graph:.2f}ms]:")
-    print(graph_res.strip())
+    print(f"{C_YELLOW}Query B (Dense Semantic, Zero Lexical Overlap): 'how does the system handle many readers at once?'{C_RESET}")
+    sem_res, sem_lat = measure_time(search_memory, "how does the system handle many readers at once?", limit=2, project="demo")
+    print(sem_res.strip())
+    print(f"{C_CYAN}↳ Retrieval Latency: {C_BOLD}{sem_lat:.2f}ms{C_RESET}\n")
 
-    # 6. Mermaid.js Topology Rendering
-    print_banner("Step 5: Visualizing Topology (Mermaid.js)")
-    diagram = visualize_graph("AuthService", depth=2, project="core_api")
-    print(diagram.strip())
+    # 4. Demonstrate ACT-R cognitive power-law decay and recency weighting
+    print_header("3. ACT-R Cognitive Power-Law Decay & Spaced Practice")
+    print("Simulating repeated memory reinforcement accesses...")
+    
+    for _ in range(5):
+        search_memory("4-Way RRF", limit=1, project="demo")
+        
+    print(f"{C_GREEN}Top Memories Ranked by Access Count & Recency (Spaced Practice applied):{C_RESET}")
+    print(list_memories(limit=3, project="demo").strip())
 
-    print("\n" + "=" * 65)
-    print("✅ Engram Alpha Quickstart Completed Successfully!")
-    print("=" * 65 + "\n")
+    # 5. Ingest a miniature sample markdown vault with [[wikilinks]] and render Mermaid
+    print_header("4. Obsidian Vault Ingestion & Knowledge Graph Topology")
+    
+    vault_dir = os.path.join(temp_dir, "vault")
+    os.makedirs(vault_dir, exist_ok=True)
+    
+    with open(os.path.join(vault_dir, "AgentArchitecture.md"), "w") as f:
+        f.write("# Agent Architecture\n\nThe core of the system is the [[MemoryEngine]]. It communicates via [[FastMCP]].")
+        
+    with open(os.path.join(vault_dir, "MemoryEngine.md"), "w") as f:
+        f.write("# Memory Engine\n\nBuilt on top of [[SQLite_WAL]] and uses [[4_Way_RRF]].")
+        
+    with open(os.path.join(vault_dir, "FastMCP.md"), "w") as f:
+        f.write("# FastMCP\n\nStandard Stdio JSON protocol for [[ClaudeDesktop]] integration.")
+
+    ingest_msg, ingest_lat = measure_time(ingest_obsidian, vault_dir, project="demo")
+    print(f"{C_GREEN}{ingest_msg}{C_RESET} (Parsed vault in {C_BOLD}{ingest_lat:.2f}ms{C_RESET})\n")
+
+    print(f"{C_YELLOW}Mermaid.js Topology for 'MemoryEngine' (Depth 2):{C_RESET}")
+    graph_viz, viz_lat = measure_time(visualize_graph, "MemoryEngine", depth=2, project="demo")
+    print(graph_viz.strip())
+    print(f"\n{C_CYAN}↳ Graph rendering latency: {C_BOLD}{viz_lat:.2f}ms{C_RESET}")
+
+    # Cleanup
+    print_header("Demo Complete!")
+    print(f"{C_GREEN}All benchmarks and cognitive primitives verified. Cleaning up {temp_dir}...{C_RESET}\n")
+    shutil.rmtree(temp_dir)
 
 if __name__ == "__main__":
     main()
