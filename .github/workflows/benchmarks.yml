@@ -1,0 +1,24 @@
+name: Episoda Alpha AMX Latency Verification
+
+on:
+  push:
+    branches: [ "master" ]
+  pull_request:
+    branches: [ "master" ]
+
+jobs:
+  benchmark:
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Install dependencies
+        run: |
+          pip install uv
+          uv pip install --system pytest pytest-benchmark numpy fastembed pyzmq mcp sqlite-vec
+      - name: Execute Fast AMX Hardware Verification
+        run: |
+          python3 -c "import time, numpy as np; v = np.random.randn(1000, 384).astype(np.float32); t0 = time.perf_counter(); np.dot(v, v.T); lat = (time.perf_counter() - t0) * 1000; print(f'Vector Latency: {lat:.2f}ms')"

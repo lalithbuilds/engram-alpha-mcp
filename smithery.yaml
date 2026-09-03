@@ -5,10 +5,10 @@ startCommand:
     properties:
       dbPath:
         type: string
-        description: "Optional custom absolute path to SQLite database. Defaults to ~/.engram/engram.sqlite"
+        description: "Optional custom absolute path to SQLite database. Defaults to ~/.episoda/engram.sqlite"
   commandFunction: |-
     (config) => ({
-      command: "engram-alpha-mcp",
-      args: [],
+      command: "uvx",
+      args: ["episoda-alpha-mcp"],
       env: config?.dbPath ? { ENGRAM_DB_PATH: config.dbPath } : {}
     })
