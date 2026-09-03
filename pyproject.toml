@@ -9,6 +9,23 @@ description = "Episoda Alpha MCP: Sovereign Cognitive Graph & Episodic Memory En
 readme = "README.md"
 requires-python = ">=3.10"
 license = { text = "MIT" }
+authors = [{ name = "Lalith Chandra", email = "lalith070804@gmail.com" }]
+keywords = [
+    "episoda",
+    "episoda-alpha-mcp",
+    "episoda-mcp",
+    "model-context-protocol",
+    "mcp",
+    "mcp-server",
+    "cognitive-memory",
+    "episodic-memory",
+    "apple-silicon-amx",
+    "sqlite-wal",
+    "knowledge-graph",
+    "claude-code",
+    "cursor",
+    "windsurf"
+]
 dependencies = [
     "mcp>=1.0.0",
     "pyzmq>=25.0.0",
@@ -19,6 +36,13 @@ dependencies = [
     "tokenizers>=0.19.0",
     "pysqlite3-binary>=0.5.2; sys_platform == 'linux'",
 ]
+
+[project.urls]
+Homepage = "https://lalithbuilds.github.io/episoda-alpha-mcp/"
+Documentation = "https://lalithbuilds.github.io/episoda-alpha-mcp/"
+Repository = "https://github.com/lalithbuilds/episoda-alpha-mcp"
+Issues = "https://github.com/lalithbuilds/episoda-alpha-mcp/issues"
+Changelog = "https://github.com/lalithbuilds/episoda-alpha-mcp/releases"
 
 [project.optional-dependencies]
 all = []
@@ -37,4 +61,3 @@ engram-alpha-mcp = "engram.server:main"
 
 [tool.hatch.build.targets.wheel]
 packages = ["src/engram"]
-
