@@ -1,19 +1,29 @@
 {
-  "$schema": "https://static.modelcontextprotocol.io/schemas/2025-12-11/server.schema.json",
-  "name": "io.github.lalithbuilds/engram-alpha-mcp",
+  "$schema": "https://raw.githubusercontent.com/modelcontextprotocol/registry/main/schema/server.json",
+  "name": "io.github.lalithbuilds/episoda-alpha-mcp",
+  "title": "Episoda Alpha MCP",
+  "description": "Sovereign local-first episodic memory substrate and Model Context Protocol (MCP) server for local AI coding agents. Features Apple Silicon AMX vector acceleration (1.2M+ vecs/sec), SQLite WAL, 4-Way Reciprocal Rank Fusion, bi-temporal knowledge graphs, and native Obsidian sync.",
   "version": "2.1.0",
-  "description": "Engram Alpha MCP: Sovereign Cognitive Memory Engine with Hardware AMX & 4-Way RRF",
-  "repository": {
-    "url": "https://github.com/lalithbuilds/engram-alpha-mcp",
-    "type": "git"
-  },
-  "homepage": "https://lalithbuilds.github.io/engram-alpha-mcp/",
   "license": "MIT",
+  "author": {
+    "name": "Lalith Chandra",
+    "url": "https://github.com/lalithbuilds"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/lalithbuilds/episoda-alpha-mcp"
+  },
+  "homepage": "https://lalithbuilds.github.io/episoda-alpha-mcp/",
   "packages": [
     {
-      "type": "pypi",
-      "name": "engram-alpha-mcp",
+      "registry": "pypi",
+      "name": "episoda-alpha-mcp",
       "version": "2.1.0"
     }
-  ]
+  ],
+  "transport": {
+    "type": "stdio",
+    "command": "uvx",
+    "args": ["episoda-alpha-mcp"]
+  }
 }

@@ -3,9 +3,9 @@ requires = ["hatchling"]
 build-backend = "hatchling.build"
 
 [project]
-name = "engram-alpha-mcp"
+name = "episoda-alpha-mcp"
 version = "2.1.0"
-description = "Engram Alpha: Sovereign Semantic Graph MCP Memory Engine with Hardware AMX & 4-Way RRF"
+description = "Episoda Alpha MCP: Sovereign Cognitive Graph & Episodic Memory Engine with Hardware AMX & 4-Way RRF"
 readme = "README.md"
 requires-python = ">=3.10"
 license = { text = "MIT" }
@@ -28,6 +28,9 @@ dev = [
 ]
 
 [project.scripts]
+episoda = "engram.cli:main"
+episoda-mcp = "engram.server:main"
+episoda-alpha-mcp = "engram.server:main"
 engram = "engram.cli:main"
 engram-mcp = "engram.server:main"
 engram-alpha-mcp = "engram.server:main"

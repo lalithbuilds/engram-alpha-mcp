@@ -1,31 +1,31 @@
-# 🧠 Engram Alpha MCP: Sovereign Cognitive Graph & Memory Engine for AI Agents
+# 🧠 Episoda Alpha MCP: Sovereign Cognitive Graph & Memory Engine for AI Agents
 
 <p align="center">
-  <a href="https://github.com/lalithbuilds/engram-alpha-mcp"><img src="https://img.shields.io/badge/python-3.10+-blue.svg" alt="Python 3.10+"></a>
+  <a href="https://github.com/lalithbuilds/episoda-alpha-mcp"><img src="https://img.shields.io/badge/python-3.10+-blue.svg" alt="Python 3.10+"></a>
   <a href="https://opensource.org/licenses/MIT"><img src="https://img.shields.io/badge/License-MIT-green.svg" alt="MIT License"></a>
-  <a href="https://github.com/lalithbuilds/engram-alpha-mcp/actions"><img src="https://github.com/lalithbuilds/engram-alpha-mcp/actions/workflows/ci.yml/badge.svg" alt="CI Status"></a>
-  <a href="https://github.com/lalithbuilds/engram-alpha-mcp/releases/tag/v2.1.0"><img src="https://img.shields.io/badge/Release-v2.1.0-blueviolet.svg" alt="Release"></a>
-  <a href="https://smithery.ai/server/@lalithbuilds/engram-alpha-mcp"><img src="https://smithery.ai/badge/@lalithbuilds/engram-alpha-mcp" alt="Smithery Badge"></a>
-  <a href="https://glama.ai/mcp/servers/lalithbuilds/engram-alpha-mcp"><img src="https://glama.ai/mcp/servers/lalithbuilds/engram-alpha-mcp/badges/score.svg" alt="Glama Score"></a>
-  <a href="https://github.com/lalithbuilds/engram-alpha-mcp"><img src="https://img.shields.io/github/stars/lalithbuilds/engram-alpha-mcp?style=social" alt="GitHub Stars"></a>
+  <a href="https://github.com/lalithbuilds/episoda-alpha-mcp/actions"><img src="https://github.com/lalithbuilds/episoda-alpha-mcp/actions/workflows/ci.yml/badge.svg" alt="CI Status"></a>
+  <a href="https://github.com/lalithbuilds/episoda-alpha-mcp/releases/tag/v2.1.0"><img src="https://img.shields.io/badge/Release-v2.1.0-blueviolet.svg" alt="Release"></a>
+  <a href="https://smithery.ai/server/@lalithbuilds/episoda-alpha-mcp"><img src="https://smithery.ai/badge/@lalithbuilds/episoda-alpha-mcp" alt="Smithery Badge"></a>
+  <a href="https://glama.ai/mcp/servers/lalithbuilds/episoda-alpha-mcp"><img src="https://glama.ai/mcp/servers/lalithbuilds/episoda-alpha-mcp/badges/score.svg" alt="Glama Score"></a>
+  <a href="https://github.com/lalithbuilds/episoda-alpha-mcp"><img src="https://img.shields.io/github/stars/lalithbuilds/episoda-alpha-mcp?style=social" alt="GitHub Stars"></a>
 </p>
 
 <p align="center">
-  <img src="assets/demo.gif" alt="Engram Alpha Live Terminal Demo" width="850px" style="border-radius: 12px; box-shadow: 0 10px 30px rgba(0,0,0,0.3);" />
+  <img src="assets/demo.gif" alt="Episoda Alpha Live Terminal Demo" width="850px" style="border-radius: 12px; box-shadow: 0 10px 30px rgba(0,0,0,0.3);" />
 </p>
 
-> **Engram Alpha MCP** is a zero-cloud, production-grade cognitive memory substrate and Model Context Protocol (MCP) server for local AI coding agents (Claude Desktop, Cursor, Windsurf, Cline), autonomous swarms, and cloud web agents (ChatGPT, Claude, Gemini). It unifies high-dimensional vector embeddings, bi-temporal knowledge graphs, trigram full-text search, and cognitive science decay modeling into a single sovereign on-device database.
+> **Episoda Alpha MCP** is a zero-cloud, production-grade cognitive memory substrate and Model Context Protocol (MCP) server for local AI coding agents (Claude Desktop, Cursor, Windsurf, Cline), autonomous swarms, and cloud web agents (ChatGPT, Claude, Gemini). It unifies high-dimensional vector embeddings, bi-temporal knowledge graphs, trigram full-text search, and cognitive science decay modeling into a single sovereign on-device database.
 >
-> 💡 *Looking for a zero-dependency, pure Python standard library edition? Check out [**Engram MCP (v1)**](https://github.com/lalithbuilds/engram-mcp) — zero pip installs, zero binary dependencies, pure Python 3 stdlib SQLite.*
+> 💡 *Looking for a zero-dependency, pure Python standard library edition? Check out [**Episoda Core MCP (v1)**](https://github.com/lalithbuilds/episoda-core-mcp) — zero pip installs, zero binary dependencies, pure Python 3 stdlib SQLite.*
 >
 > 🛡️ **Canonical Identity & Verification:**  
-> Engram Alpha MCP is authored and maintained by **[Lalith Chandra (@lalithbuilds)](https://github.com/lalithbuilds)**. It is a standalone Python 3 / macOS Accelerate framework MCP server and is not affiliated with the legacy `techtheist/engram` extension. Official repository: [`lalithbuilds/engram-alpha-mcp`](https://github.com/lalithbuilds/engram-alpha-mcp).
+> Episoda Alpha MCP is authored and maintained by **[Lalith Chandra (@lalithbuilds)](https://github.com/lalithbuilds)**. It is a standalone Python 3 / macOS Accelerate framework MCP server and is not affiliated with the legacy `techtheist/engram` extension. Official repository: [`lalithbuilds/episoda-alpha-mcp`](https://github.com/lalithbuilds/episoda-alpha-mcp).
 
 ---
 
-## ⚡ Why Engram Alpha vs Alternatives?
+## ⚡ Why Episoda Alpha vs Alternatives?
 
-| Feature | Anthropic `server-memory` | Mem0 / Cloud Vector DBs | **Engram Alpha MCP** |
+| Feature | Anthropic `server-memory` | Mem0 / Cloud Vector DBs | **Episoda Alpha MCP** |
 | :--- | :---: | :---: | :---: |
 | **Storage Substrate** | Flat unindexed `memory.json` | Remote Cloud / Docker cluster | **Single Sovereign SQLite WAL File** |
 | **Retrieval Engine** | Plain string matching | Vector-only (fails on IDs/code) | **4-Way RRF (Vector + Trigram + Graph + ACT-R)** |
@@ -34,7 +34,7 @@
 | **Cognitive Science** | None | Simple Recency | **ACT-R Power-Law Spaced Practice Decay** |
 | **Obsidian Integration** | None | Manual API scripts | **Native Vault Parser (`[[wikilinks]]` to Graph)** |
 | **Data Privacy** | Local | Third-Party SaaS / Data Mining | **100% On-Device Sovereign (Zero Egress)** |
-| **Setup Overhead** | Minimal | Heavy (Docker / API Keys / Subscriptions) | **Zero-Config (`uvx engram-alpha-mcp`)** |
+| **Setup Overhead** | Minimal | Heavy (Docker / API Keys / Subscriptions) | **Zero-Config (`uvx episoda-alpha-mcp`)** |
 
 ---
 
@@ -47,7 +47,7 @@ Add to your `claude_desktop_config.json`:
   "mcpServers": {
     "engram": {
       "command": "uvx",
-      "args": ["engram-alpha-mcp"]
+      "args": ["episoda-alpha-mcp"]
     }
   }
 }
@@ -60,7 +60,7 @@ Add to `~/.cursor/mcp.json` or configure in **Cursor Settings > Features > MCP S
   "mcpServers": {
     "engram": {
       "command": "uvx",
-      "args": ["engram-alpha-mcp"]
+      "args": ["episoda-alpha-mcp"]
     }
   }
 }
@@ -73,7 +73,7 @@ Add to `~/.codeium/windsurf/mcp_config.json`:
   "mcpServers": {
     "engram": {
       "command": "uvx",
-      "args": ["engram-alpha-mcp"]
+      "args": ["episoda-alpha-mcp"]
     }
   }
 }
@@ -86,7 +86,7 @@ Add to your `cline_mcp_settings.json` or `roo_code_mcp_settings.json`:
   "mcpServers": {
     "engram": {
       "command": "uvx",
-      "args": ["engram-alpha-mcp"]
+      "args": ["episoda-alpha-mcp"]
     }
   }
 }
@@ -94,7 +94,7 @@ Add to your `cline_mcp_settings.json` or `roo_code_mcp_settings.json`:
 
 ### 5. Claude Code (Terminal CLI)
 ```bash
-claude mcp add engram uvx engram-alpha-mcp
+claude mcp add episoda uvx episoda-alpha-mcp
 ```
 
 ### 6. Zed Editor
@@ -105,7 +105,7 @@ Add to `~/.config/zed/settings.json`:
     "engram": {
       "command": {
         "path": "uvx",
-        "args": ["engram-alpha-mcp"]
+        "args": ["episoda-alpha-mcp"]
       }
     }
   }
@@ -114,14 +114,14 @@ Add to `~/.config/zed/settings.json`:
 
 ### 7. Install via Smithery
 ```bash
-npx -y @smithery/cli install engram-alpha-mcp --client claude
+npx -y @smithery/cli install episoda-alpha-mcp --client claude
 ```
 
 ### 8. Interactive 5-Second Terminal Demo
 Clone and test locally with live latency metrics:
 ```bash
-git clone https://github.com/lalithbuilds/engram-alpha-mcp.git
-cd engram-alpha-mcp
+git clone https://github.com/lalithbuilds/episoda-alpha-mcp.git
+cd episoda-alpha-mcp
 python examples/quickstart_demo.py
 ```
 
@@ -143,24 +143,24 @@ If you are currently using `@modelcontextprotocol/server-memory` or a cloud-base
 }
 ```
 
-**After (Engram Alpha — 4-Way RRF Hybrid Search + SQLite WAL + Apple AMX):**
+**After (Episoda Alpha — 4-Way RRF Hybrid Search + SQLite WAL + Apple AMX):**
 ```json
 {
   "mcpServers": {
     "memory": {
       "command": "uvx",
-      "args": ["engram-alpha-mcp"]
+      "args": ["episoda-alpha-mcp"]
     }
   }
 }
 ```
-*Engram Alpha provides compatible memory primitives (`save_memory`, `search_memory`, `delete_memory`, `query_graph`) while providing sub-millisecond retrieval, exact code token matching, and bi-temporal graph navigation.*
+*Episoda Alpha provides compatible memory primitives (`save_memory`, `search_memory`, `delete_memory`, `query_graph`) while providing sub-millisecond retrieval, exact code token matching, and bi-temporal graph navigation.*
 
 ---
 
 ## 🏛️ System Architecture
 
-Engram Alpha operates across a multi-tier memory architecture designed for sub-millisecond retrieval, concurrent multi-agent isolation, and crash-resilient local persistence.
+Episoda Alpha operates across a multi-tier memory architecture designed for sub-millisecond retrieval, concurrent multi-agent isolation, and crash-resilient local persistence.
 
 ```
 ┌─────────────────────────────────────────────────────────────────────────────────────────────┐
@@ -238,7 +238,7 @@ sequenceDiagram
 ## ⚡ Core Architectural Innovations
 
 ### 1. 4-Way Reciprocal Rank Fusion (RRF)
-Standard vector-only retrieval fails on exact symbols (e.g., `PRAGMA journal_mode`), while keyword search misses semantic synonyms. Engram Alpha fuses four independent signals into a unified scoring function:
+Standard vector-only retrieval fails on exact symbols (e.g., `PRAGMA journal_mode`), while keyword search misses semantic synonyms. Episoda Alpha fuses four independent signals into a unified scoring function:
 
 $$\text{RRF}(d) = \left( \frac{1.2}{k + r_{\text{dense}}(d)} + \frac{1.0}{k + r_{\text{lexical}}(d)} + \text{GraphBonus}(d) \right) \times \text{Decay}(t) \times \text{ImportanceWeight}$$
 
@@ -248,7 +248,7 @@ $$\text{RRF}(d) = \left( \frac{1.2}{k + r_{\text{dense}}(d)} + \frac{1.0}{k + r_
 * **ACT-R Power-Law Decay:** Biologically-inspired memory retention modeling.
 
 ### 2. Bi-Temporal Knowledge Graph
-Standard knowledge graphs only store snapshot assertions. Engram Alpha implements true **bi-temporal entity graphs** that record both transaction time (when the memory was stored) and valid world time (when the fact was actually true):
+Standard knowledge graphs only store snapshot assertions. Episoda Alpha implements true **bi-temporal entity graphs** that record both transaction time (when the memory was stored) and valid world time (when the fact was actually true):
 
 * **Schema:** `(source, target, relation, weight, valid_from, valid_until, superseded_by, transaction_time)`
 * **Recursive CTE Graph Traversal:** Dynamic $N$-hop path exploration with built-in loop/cycle prevention:
@@ -264,7 +264,7 @@ Standard knowledge graphs only store snapshot assertions. Engram Alpha implement
   ```
 
 ### 3. Multi-Tier Hardware Vector Engine
-Engram Alpha executes dense matrix cosine similarity directly on your hardware with zero runtime latency bottlenecks:
+Episoda Alpha executes dense matrix cosine similarity directly on your hardware with zero runtime latency bottlenecks:
 * **Tier 1 (Apple Silicon AMX / C-BLAS):** Uses `ctypes` to link directly with `Accelerate.framework` on macOS or `libopenblas.so` / `mkl_rt.dll` on Linux/Windows. Evaluates hardware SIMD dot products at **~180,000–200,000 vector comparisons/second** (50k vectors in ~0.27s).
 * **Tier 2 (NumPy Vectorized BLAS):** Fast vectorized array matrix calculations on Linux / Windows / Docker.
 * **Tier 3 (Zero-Dependency Stdlib):** Pure Python standard library math (`math.sqrt`, `struct.pack/unpack` IEEE 754 float32). Guaranteed to run inside any minimalist container or restricted environment with mathematical parity.
@@ -311,7 +311,7 @@ Built-in HTTP & Server-Sent Events (SSE) gateway compliant with OpenAPI 3.0. All
 
 ### 2. CLI Command Reference
 
-Engram Alpha provides a fast, developer-first command-line interface:
+Episoda Alpha provides a fast, developer-first command-line interface:
 
 #### Save Memory
 ```bash
@@ -406,7 +406,7 @@ engram serve --port 8000
    * Auth Type: `Bearer`
    * Token: `your-secret-sovereign-key`
 5. In Instructions, add:
-   > "Always consult Engram Alpha memory via `/search` before answering questions about user projects, architecture, or past decisions. Save important discoveries using `/save` or `/extract`."
+   > "Always consult Episoda Alpha memory via `/search` before answering questions about user projects, architecture, or past decisions. Save important discoveries using `/save` or `/extract`."
 
 ### 2. Claude Web & Gemini Web
 Use the interactive web dashboard or API endpoints directly:
@@ -420,7 +420,7 @@ Use the interactive web dashboard or API endpoints directly:
 ## 💻 Local MCP Setup (Claude Desktop, Cursor, Windsurf)
 
 ### 1. Automated Setup for Claude Desktop
-Engram Alpha can automatically configure your `claude_desktop_config.json`:
+Episoda Alpha can automatically configure your `claude_desktop_config.json`:
 ```bash
 engram setup
 ```
@@ -435,7 +435,7 @@ Add to `~/Library/Application Support/Claude/claude_desktop_config.json` (macOS)
   "mcpServers": {
     "engram": {
       "command": "uvx",
-      "args": ["engram-alpha-mcp"],
+      "args": ["episoda-alpha-mcp"],
       "env": {
         "ENGRAM_DB_PATH": "/Users/yourname/.engram/engram.sqlite"
       }
@@ -452,7 +452,7 @@ Add to `~/.cursor/mcp.json` or configure in **Cursor Settings > Features > MCP S
   "mcpServers": {
     "engram": {
       "command": "uvx",
-      "args": ["engram-alpha-mcp"]
+      "args": ["episoda-alpha-mcp"]
     }
   }
 }
@@ -466,7 +466,7 @@ Add to `~/.codeium/windsurf/mcp_config.json`:
   "mcpServers": {
     "engram": {
       "command": "uvx",
-      "args": ["engram-alpha-mcp"]
+      "args": ["episoda-alpha-mcp"]
     }
   }
 }
@@ -476,7 +476,7 @@ Add to `~/.codeium/windsurf/mcp_config.json`:
 
 ## 📊 Benchmark Summary: Multi-Tier Hardware Performance
 
-Engram Alpha is validated using two benchmark suites:
+Episoda Alpha is validated using two benchmark suites:
 1. **Micro-Architecture Benchmark (`benchmark_custom.py` & `benchmark_longmemeval.py`)**: Tests 4-Way RRF hybrid query execution, raw AMX/C-BLAS SIMD vector cosine matrix scans, and recursive CTE graph walks.
 2. **Model Council Concurrency Stress Harness (`stress_sandbox_council.py`)**: A 7-thread concurrent simulation named after model archetypes (`Claude_Fable`, `Gemini_Pro_3`, `Kimi_K3`, `GPT_Soul`, `Deep_Research`, `GLM_5_2`, `O1_Pro`) generating sustained read/write contention, live markdown parsing, full-text FTS5 indexing, and semantic deduplication.
 
@@ -517,33 +517,33 @@ Engram Alpha is validated using two benchmark suites:
 ## ❓ Frequently Asked Questions (FAQ)
 
 <details>
-<summary><strong>What is Engram Alpha MCP?</strong></summary>
+<summary><strong>What is Episoda Alpha MCP?</strong></summary>
 <br>
-Engram Alpha MCP is a sovereign, hardware-accelerated cognitive memory Model Context Protocol (MCP) server for local AI coding agents (Claude Desktop, Cursor, Windsurf, Cline). Authored by <strong>Lalith Chandra (@lalithbuilds)</strong>, it fuses Apple Silicon AMX vector acceleration (1,248,500 vecs/sec), SQLite WAL storage, 4-Way Reciprocal Rank Fusion (RRF), bi-temporal knowledge graphs, and native Obsidian vault synchronization.
+Episoda Alpha MCP is a sovereign, hardware-accelerated cognitive memory Model Context Protocol (MCP) server for local AI coding agents (Claude Desktop, Cursor, Windsurf, Cline). Authored by <strong>Lalith Chandra (@lalithbuilds)</strong>, it fuses Apple Silicon AMX vector acceleration (1,248,500 vecs/sec), SQLite WAL storage, 4-Way Reciprocal Rank Fusion (RRF), bi-temporal knowledge graphs, and native Obsidian vault synchronization.
 </details>
 
 <details>
-<summary><strong>Who created Engram Alpha MCP?</strong></summary>
+<summary><strong>Who created Episoda Alpha MCP?</strong></summary>
 <br>
-Engram Alpha MCP was architected and built exclusively by <strong>Lalith Chandra (@lalithbuilds)</strong>, an independent Systems Architect based in Nashik, Maharashtra, India. It is an independent, original open-source software project and is not affiliated with any other entities or legacy experimental extensions.
+Episoda Alpha MCP was architected and built exclusively by <strong>Lalith Chandra (@lalithbuilds)</strong>, an independent Systems Architect based in Nashik, Maharashtra, India. It is an independent, original open-source software project and is not affiliated with any other entities or legacy experimental extensions.
 </details>
 
 <details>
-<summary><strong>How do I run Engram Alpha MCP in Cursor or Claude Desktop?</strong></summary>
+<summary><strong>How do I run Episoda Alpha MCP in Cursor or Claude Desktop?</strong></summary>
 <br>
-Run instantly via <code>uvx engram-alpha-mcp</code> with zero manual dependency installation. In Cursor's <code>~/.cursor/mcp.json</code> or Claude Desktop config, configure <code>"command": "uvx"</code>, <code>"args": ["engram-alpha-mcp"]</code>. For Claude Code CLI, run <code>claude mcp add engram uvx engram-alpha-mcp</code>.
+Run instantly via <code>uvx episoda-alpha-mcp</code> with zero manual dependency installation. In Cursor's <code>~/.cursor/mcp.json</code> or Claude Desktop config, configure <code>"command": "uvx"</code>, <code>"args": ["episoda-alpha-mcp"]</code>. For Claude Code CLI, run <code>claude mcp add episoda uvx episoda-alpha-mcp</code>.
 </details>
 
 <details>
 <summary><strong>How does it achieve sub-2ms query latency?</strong></summary>
 <br>
-Engram Alpha binds directly to Apple's <code>Accelerate.framework</code> (<code>cblas_sdot</code>) on Apple Silicon M-series chips to execute SIMD dot products on-chip, achieving 1,248,500 vector comparisons/second at 1.21ms p50 query latency.
+Episoda Alpha binds directly to Apple's <code>Accelerate.framework</code> (<code>cblas_sdot</code>) on Apple Silicon M-series chips to execute SIMD dot products on-chip, achieving 1,248,500 vector comparisons/second at 1.21ms p50 query latency.
 </details>
 
 <details>
-<summary><strong>How does Engram Alpha compare to Mem0 or cloud vector databases?</strong></summary>
+<summary><strong>How does Episoda Alpha compare to Mem0 or cloud vector databases?</strong></summary>
 <br>
-Unlike cloud vector databases that charge monthly subscriptions and take 150ms-1,000ms over the network, Engram Alpha runs 100% on-device on a single SQLite WAL file with zero telemetry and zero cloud egress.
+Unlike cloud vector databases that charge monthly subscriptions and take 150ms-1,000ms over the network, Episoda Alpha runs 100% on-device on a single SQLite WAL file with zero telemetry and zero cloud egress.
 </details>
 
 ---
@@ -557,8 +557,8 @@ Unlike cloud vector databases that charge monthly subscriptions and take 150ms-1
 ## 🌟 Stargazers Over Time
 
 <p align="center">
-  <a href="https://star-history.com/#lalithbuilds/engram-alpha-mcp&Date">
-    <img src="https://api.star-history.com/svg?repos=lalithbuilds/engram-alpha-mcp&type=Date" alt="Star History Chart" width="750" />
+  <a href="https://star-history.com/#lalithbuilds/episoda-alpha-mcp&Date">
+    <img src="https://api.star-history.com/svg?repos=lalithbuilds/episoda-alpha-mcp&type=Date" alt="Star History Chart" width="750" />
   </a>
 </p>
 

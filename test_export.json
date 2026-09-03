@@ -1,26 +1,26 @@
 {
   "nodes": [
     {
-      "id": "d5405f7f-fdf6-47ce-b0b7-935c4bb50ca3",
+      "id": "a52547f3-9b9b-4836-87c5-b9171fd46d44",
       "type": "memory",
       "content": "Exportable memory fact 1",
       "importance": 8,
       "category": "export_cat",
       "project": "exp_test",
       "agent": "system",
-      "created_at": "2026-09-02T11:02:12.757223+00:00"
+      "created_at": "2026-09-03T09:34:45.036628+00:00"
     },
     {
-      "id": "8cf4d1dd-d38c-466d-8299-bd5ea6b6b3b7",
+      "id": "dce510d4-ff22-42bd-93a7-c829c8b5d23e",
       "type": "memory",
       "content": "Exportable memory fact 2",
       "importance": 7,
       "category": "export_cat",
       "project": "exp_test",
       "agent": "system",
-      "created_at": "2026-09-02T11:02:12.757450+00:00"
+      "created_at": "2026-09-03T09:34:45.041671+00:00"
     }
   ],
   "edges": [],
-  "exported_at": 1788346932.757689
+  "exported_at": 1788428085.0449631
 }
