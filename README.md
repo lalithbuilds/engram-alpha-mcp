@@ -89,12 +89,32 @@ Add to your `cline_mcp_settings.json` or `roo_code_mcp_settings.json`:
 }
 ```
 
-### 5. Install via Smithery
+### 5. Claude Code (Terminal CLI)
+```bash
+claude mcp add engram uvx engram-alpha-mcp
+```
+
+### 6. Zed Editor
+Add to `~/.config/zed/settings.json`:
+```json
+{
+  "context_servers": {
+    "engram": {
+      "command": {
+        "path": "uvx",
+        "args": ["engram-alpha-mcp"]
+      }
+    }
+  }
+}
+```
+
+### 7. Install via Smithery
 ```bash
 npx -y @smithery/cli install engram-alpha-mcp --client claude
 ```
 
-### 6. Interactive 5-Second Terminal Demo
+### 8. Interactive 5-Second Terminal Demo
 Clone and test locally with live latency metrics:
 ```bash
 git clone https://github.com/lalithbuilds/engram-alpha-mcp.git
@@ -410,8 +430,9 @@ Add to `~/Library/Application Support/Claude/claude_desktop_config.json` (macOS)
 ```json
 {
   "mcpServers": {
-    "engram-alpha-mcp": {
-      "command": "engram-mcp",
+    "engram": {
+      "command": "uvx",
+      "args": ["engram-alpha-mcp"],
       "env": {
         "ENGRAM_DB_PATH": "/Users/yourname/.engram/engram.sqlite"
       }
@@ -426,8 +447,9 @@ Add to `~/.cursor/mcp.json` or configure in **Cursor Settings > Features > MCP S
 ```json
 {
   "mcpServers": {
-    "engram-alpha-mcp": {
-      "command": "engram-mcp"
+    "engram": {
+      "command": "uvx",
+      "args": ["engram-alpha-mcp"]
     }
   }
 }
@@ -439,8 +461,9 @@ Add to `~/.codeium/windsurf/mcp_config.json`:
 ```json
 {
   "mcpServers": {
-    "engram-alpha-mcp": {
-      "command": "engram-mcp"
+    "engram": {
+      "command": "uvx",
+      "args": ["engram-alpha-mcp"]
     }
   }
 }
