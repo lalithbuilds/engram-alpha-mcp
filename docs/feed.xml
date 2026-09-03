@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
+  <channel>
+    <title>Engram Alpha MCP: Sovereign Cognitive Memory Engine Updates</title>
+    <link>https://lalithbuilds.github.io/engram-alpha-mcp/</link>
+    <description>Latest releases, architecture updates, and setup guides for Engram Alpha MCP by Lalith Chandra (@lalithbuilds).</description>
+    <language>en-us</language>
+    <lastBuildDate>Thu, 03 Sep 2026 09:50:00 GMT</lastBuildDate>
+    <atom:link href="https://lalithbuilds.github.io/engram-alpha-mcp/feed.xml" rel="self" type="application/rss+xml"/>
+    
+    <item>
+      <title>Engram Alpha MCP v2.1.0: Sovereign Hardware-Accelerated Memory Engine Released</title>
+      <link>https://lalithbuilds.github.io/engram-alpha-mcp/</link>
+      <guid>https://lalithbuilds.github.io/engram-alpha-mcp/#v2.1.0</guid>
+      <pubDate>Thu, 03 Sep 2026 08:00:00 GMT</pubDate>
+      <description>Lalith Chandra announces the release of Engram Alpha MCP v2.1.0 featuring direct Apple Silicon AMX C-BLAS hardware acceleration (1,248,500 vector comparisons/sec), SQLite WAL storage, 4-Way Reciprocal Rank Fusion (RRF), bi-temporal knowledge graphs, and native Obsidian vault sync.</description>
+    </item>
+
+    <item>
+      <title>How to Setup Engram Alpha MCP in Claude Desktop &amp; Claude Code CLI</title>
+      <link>https://lalithbuilds.github.io/engram-alpha-mcp/claude.html</link>
+      <guid>https://lalithbuilds.github.io/engram-alpha-mcp/claude.html</guid>
+      <pubDate>Thu, 03 Sep 2026 09:00:00 GMT</pubDate>
+      <description>Step-by-step documentation for installing and running Engram Alpha MCP in Claude Desktop and Claude Code using uvx engram-alpha-mcp with sub-2ms query latency.</description>
+    </item>
+
+    <item>
+      <title>How to Configure Engram Alpha MCP in Cursor IDE</title>
+      <link>https://lalithbuilds.github.io/engram-alpha-mcp/cursor.html</link>
+      <guid>https://lalithbuilds.github.io/engram-alpha-mcp/cursor.html</guid>
+      <pubDate>Thu, 03 Sep 2026 09:15:00 GMT</pubDate>
+      <description>Complete configuration reference for setting up Engram Alpha MCP in Cursor ~/.cursor/mcp.json for Composer and Agent mode.</description>
+    </item>
+  </channel>
+</rss>
