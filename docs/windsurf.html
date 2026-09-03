@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>How to Setup Episoda Alpha MCP in Windsurf Editor (Cascade Agent)</title>
+  <meta name="description" content="Step-by-step guide to installing and configuring Episoda Alpha MCP in Windsurf Editor. Give Codeium Cascade sovereign, persistent episodic memory.">
+  <link rel="canonical" href="https://lalithbuilds.github.io/episoda-alpha-mcp/windsurf.html">
+  <meta property="og:title" content="Setup Episoda Alpha MCP in Windsurf (Cascade)">
+  <meta property="og:description" content="1.21ms p50 hardware-accelerated memory for Windsurf Cascade. Single SQLite WAL file.">
+  <meta property="og:image" content="https://raw.githubusercontent.com/lalithbuilds/episoda-alpha-mcp/master/assets/social-card.png">
+
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "TechArticle",
+    "headline": "How to Configure Episoda Alpha MCP in Windsurf Editor",
+    "description": "Complete guide to giving Windsurf Cascade persistent memory using Episoda Alpha MCP server.",
+    "author": {
+      "@type": "Person",
+      "name": "Lalith Chandra",
+      "url": "https://github.com/lalithbuilds"
+    },
+    "publisher": {
+      "@type": "Person",
+      "name": "Lalith Chandra"
+    },
+    "datePublished": "2026-09-03",
+    "mainEntityOfPage": "https://lalithbuilds.github.io/episoda-alpha-mcp/windsurf.html"
+  }
+  </script>
+
+  <style>
+    body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; background: #090d16; color: #f3f4f6; line-height: 1.6; padding: 2rem 1rem; }
+    .container { max-width: 800px; margin: 0 auto; }
+    pre { background: #030712; padding: 1.2rem; border-radius: 8px; border: 1px solid #1f2937; overflow-x: auto; color: #38bdf8; }
+    code { font-family: monospace; }
+    a { color: #38bdf8; text-decoration: none; }
+    a:hover { text-decoration: underline; }
+    h1, h2 { color: #ffffff; margin-bottom: 1rem; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <p><a href="index.html">&larr; Back to Episoda Alpha MCP Overview</a></p>
+    <br>
+    <h1>How to Setup Episoda Alpha MCP in Windsurf Editor</h1>
+    <p>By <a href="https://github.com/lalithbuilds">Lalith Chandra (@lalithbuilds)</a> &bull; Updated September 2026</p>
+    <br>
+    <p><strong>Windsurf Editor</strong> (powered by Codeium and Cascade) supports the Model Context Protocol (MCP). By connecting Episoda Alpha MCP, Cascade gains persistent, on-device episodic memory that remembers project architecture decisions across sessions.</p>
+
+    <br>
+    <h2>Configuration File Location</h2>
+    <p>Windsurf stores its MCP server definitions in:</p>
+    <ul>
+      <li><strong>macOS / Linux:</strong> <code>~/.codeium/windsurf/mcp_config.json</code></li>
+      <li><strong>Windows:</strong> <code>%USERPROFILE%\.codeium\windsurf\mcp_config.json</code></li>
+    </ul>
+
+    <br>
+    <h2>JSON Configuration</h2>
+    <pre><code>{
+  "mcpServers": {
+    "episoda": {
+      "command": "uvx",
+      "args": ["episoda-alpha-mcp"]
+    }
+  }
+}</code></pre>
+
+    <br>
+    <h2>Why Windsurf Developers Choose Episoda Alpha</h2>
+    <ul>
+      <li><strong>1.21ms Latency:</strong> Apple Silicon AMX vector acceleration responds instantaneously during Cascade agent execution loops.</li>
+      <li><strong>4-Way RRF:</strong> Never forgets exact function names or commit IDs due to exact SQLite FTS5 trigram indexing.</li>
+      <li><strong>100% On-Device:</strong> Zero cloud telemetry, single SQLite WAL file.</li>
+    </ul>
+  </div>
+</body>
+</html>

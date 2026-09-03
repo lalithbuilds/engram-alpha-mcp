@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>How to Setup Episoda Alpha MCP in Cline (VS Code Autonomous Agent)</title>
+  <meta name="description" content="Step-by-step setup guide for connecting Episoda Alpha MCP to Cline in VS Code. Give Cline persistent, sovereign episodic memory and graph recall.">
+  <link rel="canonical" href="https://lalithbuilds.github.io/episoda-alpha-mcp/cline.html">
+  <meta property="og:title" content="Setup Episoda Alpha MCP in Cline">
+  <meta property="og:description" content="Persistent on-device memory for Cline. Apple AMX hardware SIMD acceleration.">
+  <meta property="og:image" content="https://raw.githubusercontent.com/lalithbuilds/episoda-alpha-mcp/master/assets/social-card.png">
+
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "TechArticle",
+    "headline": "How to Configure Episoda Alpha MCP in Cline",
+    "description": "Comprehensive guide for equipping Cline autonomous coding agent with persistent episodic memory using Episoda Alpha MCP.",
+    "author": {
+      "@type": "Person",
+      "name": "Lalith Chandra",
+      "url": "https://github.com/lalithbuilds"
+    },
+    "publisher": {
+      "@type": "Person",
+      "name": "Lalith Chandra"
+    },
+    "datePublished": "2026-09-03",
+    "mainEntityOfPage": "https://lalithbuilds.github.io/episoda-alpha-mcp/cline.html"
+  }
+  </script>
+
+  <style>
+    body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; background: #090d16; color: #f3f4f6; line-height: 1.6; padding: 2rem 1rem; }
+    .container { max-width: 800px; margin: 0 auto; }
+    pre { background: #030712; padding: 1.2rem; border-radius: 8px; border: 1px solid #1f2937; overflow-x: auto; color: #38bdf8; }
+    code { font-family: monospace; }
+    a { color: #38bdf8; text-decoration: none; }
+    a:hover { text-decoration: underline; }
+    h1, h2 { color: #ffffff; margin-bottom: 1rem; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <p><a href="index.html">&larr; Back to Episoda Alpha MCP Overview</a></p>
+    <br>
+    <h1>How to Setup Episoda Alpha MCP in Cline</h1>
+    <p>By <a href="https://github.com/lalithbuilds">Lalith Chandra (@lalithbuilds)</a> &bull; Updated September 2026</p>
+    <br>
+    <p><strong>Cline</strong> (the leading open-source autonomous coding agent for VS Code) supports Model Context Protocol (MCP) servers. Adding Episoda Alpha MCP gives Cline long-term persistent memory across complex refactoring tasks.</p>
+
+    <br>
+    <h2>Configuration in Cline Settings</h2>
+    <p>Open Cline in VS Code, navigate to the <strong>MCP Servers</strong> tab, and click <strong>Configure MCP Servers</strong>. Add the following block:</p>
+
+    <br>
+    <pre><code>{
+  "mcpServers": {
+    "episoda": {
+      "command": "uvx",
+      "args": ["episoda-alpha-mcp"]
+    }
+  }
+}</code></pre>
+
+    <br>
+    <h2>Key Advantages for Cline Agents</h2>
+    <ul>
+      <li><strong>Prevent Memory Rot:</strong> Cline automatically flags and recalls past debugging decisions so it never repeats the same mistake twice.</li>
+      <li><strong>Bi-Temporal Knowledge Graph:</strong> Cline queries relationships between modified files and architectural constraints using 15 specialized tools.</li>
+      <li><strong>Zero Setup:</strong> Runs seamlessly via <code>uvx</code> without virtual environment management.</li>
+    </ul>
+  </div>
+</body>
+</html>
