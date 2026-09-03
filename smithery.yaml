@@ -1,0 +1,14 @@
+startCommand:
+  type: stdio
+  configSchema:
+    type: object
+    properties:
+      dbPath:
+        type: string
+        description: "Optional custom absolute path to SQLite database. Defaults to ~/.engram/engram.sqlite"
+  commandFunction: |-
+    (config) => ({
+      command: "engram-alpha-mcp",
+      args: [],
+      env: config?.dbPath ? { ENGRAM_DB_PATH: config.dbPath } : {}
+    })

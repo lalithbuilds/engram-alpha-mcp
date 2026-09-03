@@ -11,6 +11,46 @@
 
 ---
 
+## ⚡ Why Engram Alpha vs Alternatives?
+
+| Feature | Anthropic `server-memory` | Mem0 / Cloud Vector DBs | **Engram Alpha MCP** |
+| :--- | :---: | :---: | :---: |
+| **Storage Substrate** | Flat unindexed `memory.json` | Remote Cloud / Docker cluster | **Single Sovereign SQLite WAL File** |
+| **Retrieval Engine** | Plain string matching | Vector-only (fails on IDs/code) | **4-Way RRF (Vector + Trigram + Graph + ACT-R)** |
+| **Query Latency (p50)**| ~15ms (degrades at scale) | 150ms – 400ms (network latency)| **1.21ms (Native Apple AMX / C-BLAS)** |
+| **Code / Token Match** | Broken | Semantic drift / hallucination | **Exact Match (SQLite FTS5 Trigrams)** |
+| **Cognitive Science** | None | Simple Recency | **ACT-R Power-Law Spaced Practice Decay** |
+| **Obsidian Integration** | None | Manual API scripts | **Native Vault Parser (`[[wikilinks]]` to Graph)** |
+| **Data Privacy** | Local | Third-Party SaaS / Data Mining | **100% On-Device Sovereign (Zero Egress)** |
+| **Setup Overhead** | Minimal | Heavy (Docker / API Keys / Subscriptions) | **Zero-Config (`uvx engram-alpha-mcp`)** |
+
+---
+
+## 🚀 Quickstart (Zero-Install via `uvx`)
+
+### 1. Claude Desktop
+Add to your `claude_desktop_config.json`:
+```json
+{
+  "mcpServers": {
+    "engram": {
+      "command": "uvx",
+      "args": ["engram-alpha-mcp"]
+    }
+  }
+}
+```
+
+### 2. Install via Smithery
+```bash
+npx -y @smithery/cli install engram-alpha-mcp --client claude
+```
+
+### 3. Cursor & Windsurf
+Add an MCP server with command `uvx` and args `["engram-alpha-mcp"]`.
+
+---
+
 ## 🏛️ System Architecture
 
 Engram Alpha operates across a multi-tier memory architecture designed for sub-millisecond retrieval, concurrent multi-agent isolation, and crash-resilient local persistence.

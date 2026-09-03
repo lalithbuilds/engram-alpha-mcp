@@ -107,6 +107,7 @@ def test_sqlite_vec_configurable_dimension():
     old_db = os.environ.get("ENGRAM_DB_PATH")
     try:
         os.environ["ENGRAM_EMBEDDING_DIM"] = "512"
+        os.environ["ENGRAM_DB_PATH"] = test_dim_path
         init_db(force=True)
 
         conn = get_db()

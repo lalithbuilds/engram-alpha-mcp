@@ -176,9 +176,15 @@ def get_embedding_model():
                 try:
                     os.environ["OMP_NUM_THREADS"] = "1"
                     os.environ["TOKENIZERS_PARALLELISM"] = "false"
+                    sys.stderr.write("[engram] Initializing local embedding engine (BAAI/bge-small-en-v1.5)...\n")
+                    sys.stderr.flush()
                     from fastembed import TextEmbedding
                     _EMBEDDING_MODEL = TextEmbedding(model_name="BAAI/bge-small-en-v1.5", threads=1)
-                except Exception:
+                    sys.stderr.write("[engram] Local embedding engine ready.\n")
+                    sys.stderr.flush()
+                except Exception as e:
+                    sys.stderr.write(f"[engram] FastEmbed unavailable ({e}), using deterministic fallback.\n")
+                    sys.stderr.flush()
                     _EMBEDDING_MODEL = None
                 finally:
                     _FASTEMBED_PROBED = True
