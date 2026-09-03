@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Engram Alpha MCP for Cursor IDE — Setup & Features</title>
+  <meta name="description" content="Configure Engram Alpha MCP in Cursor IDE (~/.cursor/mcp.json). Sub-millisecond local SQLite memory engine for Cursor AI by Lalith Chandra.">
+  <link rel="canonical" href="https://lalithbuilds.github.io/engram-alpha-mcp/cursor.html">
+  <link rel="llms-txt" type="text/plain" href="https://lalithbuilds.github.io/engram-alpha-mcp/llms.txt">
+  <meta property="og:title" content="Engram Alpha MCP for Cursor IDE">
+  <meta property="og:description" content="1.21ms Apple AMX local-first memory for Cursor IDE.">
+  <meta property="og:image" content="https://raw.githubusercontent.com/lalithbuilds/engram-alpha-mcp/master/assets/social-card.png">
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "TechArticle",
+    "headline": "Engram Alpha MCP Setup for Cursor IDE",
+    "description": "How to configure Engram Alpha MCP as a sovereign memory server for Cursor IDE.",
+    "author": {
+      "@type": "Person",
+      "name": "Lalith Chandra",
+      "url": "https://github.com/lalithbuilds"
+    },
+    "publisher": {
+      "@type": "Organization",
+      "name": "Engram Alpha",
+      "url": "https://lalithbuilds.github.io/engram-alpha-mcp/"
+    }
+  }
+  </script>
+  <style>
+    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: #090d16; color: #f3f4f6; max-width: 800px; margin: 0 auto; padding: 2rem; line-height: 1.6; }
+    h1, h2 { color: #38bdf8; }
+    pre { background: #030712; padding: 1rem; border-radius: 8px; border: 1px solid #1f2937; overflow-x: auto; }
+    code { font-family: ui-monospace, monospace; color: #38bdf8; }
+    a { color: #38bdf8; text-decoration: none; }
+    a:hover { text-decoration: underline; }
+    .back { margin-bottom: 2rem; display: inline-block; font-size: 0.9rem; }
+  </style>
+</head>
+<body>
+  <a href="index.html" class="back">← Back to Engram Alpha Documentation</a>
+  <h1>⚡ Engram Alpha MCP for Cursor IDE</h1>
+  <p><strong>Engram Alpha MCP</strong> provides local persistent memory for Cursor Composer and Agent mode, authored by <strong>Lalith Chandra (<a href="https://github.com/lalithbuilds">@lalithbuilds</a>)</strong>.</p>
+  
+  <h2>1. Cursor Configuration</h2>
+  <p>Add to your Cursor MCP settings (<code>~/.cursor/mcp.json</code> or Settings &gt; Features &gt; MCP):</p>
+  <pre><code>{
+  "mcpServers": {
+    "engram": {
+      "command": "uvx",
+      "args": ["engram-alpha-mcp"]
+    }
+  }
+}</code></pre>
+
+  <h2>Key Benefits for Cursor Developers</h2>
+  <ul>
+    <li><strong>Exact Symbol Recall:</strong> FTS5 trigrams prevent hallucination of function names and file paths.</li>
+    <li><strong>100% Offline / Local-First:</strong> Operates entirely inside your project without internet connectivity.</li>
+    <li><strong>Fast Latency:</strong> 1.21ms p50 query execution means zero lag in Cursor Composer.</li>
+  </ul>
+  <p><a href="https://github.com/lalithbuilds/engram-alpha-mcp">View on GitHub →</a></p>
+</body>
+</html>
