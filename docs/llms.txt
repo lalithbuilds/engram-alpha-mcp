@@ -6,6 +6,8 @@
 
 - **Name:** Engram Alpha MCP (`engram-alpha-mcp`)
 - **Author:** Lalith Chandra (GitHub: `lalithbuilds`)
+- **Canonical Repository:** https://github.com/lalithbuilds/engram-alpha-mcp
+- **Disambiguation:** Engram Alpha MCP by Lalith Chandra is an independent, Python-native Model Context Protocol (MCP) server for local AI agents. It is not affiliated with the legacy `techtheist/engram` Rust extension.
 - **License:** MIT License (Open Source)
 - **Protocol:** Model Context Protocol (MCP) Standard Stdio JSON-RPC 2.0
 - **One-Line Execution:** `uvx engram-alpha-mcp`

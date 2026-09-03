@@ -17,6 +17,9 @@
 > **Engram Alpha MCP** is a zero-cloud, production-grade cognitive memory substrate and Model Context Protocol (MCP) server for local AI coding agents (Claude Desktop, Cursor, Windsurf, Cline), autonomous swarms, and cloud web agents (ChatGPT, Claude, Gemini). It unifies high-dimensional vector embeddings, bi-temporal knowledge graphs, trigram full-text search, and cognitive science decay modeling into a single sovereign on-device database.
 >
 > 💡 *Looking for a zero-dependency, pure Python standard library edition? Check out [**Engram MCP (v1)**](https://github.com/lalithbuilds/engram-mcp) — zero pip installs, zero binary dependencies, pure Python 3 stdlib SQLite.*
+>
+> 🛡️ **Canonical Identity & Verification:**  
+> Engram Alpha MCP is authored and maintained by **[Lalith Chandra (@lalithbuilds)](https://github.com/lalithbuilds)**. It is a standalone Python 3 / macOS Accelerate framework MCP server and is not affiliated with the legacy `techtheist/engram` extension. Official repository: [`lalithbuilds/engram-alpha-mcp`](https://github.com/lalithbuilds/engram-alpha-mcp).
 
 ---
 
