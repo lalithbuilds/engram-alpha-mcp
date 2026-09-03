@@ -57,7 +57,7 @@ Where $t_j$ is the time elapsed since the $j$-th access and $d = 0.5$ is the dec
 ```json
 {
   "mcpServers": {
-    "engram": {
+    "episoda": {
       "command": "uvx",
       "args": ["episoda-alpha-mcp"]
     }
@@ -69,7 +69,7 @@ Where $t_j$ is the time elapsed since the $j$-th access and $d = 0.5$ is the dec
 ```json
 {
   "mcpServers": {
-    "engram": {
+    "episoda": {
       "command": "uvx",
       "args": ["episoda-alpha-mcp"]
     }
@@ -86,7 +86,7 @@ claude mcp add episoda uvx episoda-alpha-mcp
 ```json
 {
   "mcpServers": {
-    "engram": {
+    "episoda": {
       "command": "uvx",
       "args": ["episoda-alpha-mcp"]
     }
@@ -98,7 +98,7 @@ claude mcp add episoda uvx episoda-alpha-mcp
 ```json
 {
   "context_servers": {
-    "engram": {
+    "episoda": {
       "command": {
         "path": "uvx",
         "args": ["episoda-alpha-mcp"]

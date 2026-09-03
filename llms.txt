@@ -28,7 +28,7 @@
 ```json
 {
   "mcpServers": {
-    "engram": {
+    "episoda": {
       "command": "uvx",
       "args": ["episoda-alpha-mcp"]
     }
@@ -40,7 +40,7 @@
 ```json
 {
   "mcpServers": {
-    "engram": {
+    "episoda": {
       "command": "uvx",
       "args": ["episoda-alpha-mcp"]
     }
@@ -57,7 +57,7 @@ claude mcp add episoda uvx episoda-alpha-mcp
 ```json
 {
   "mcpServers": {
-    "engram": {
+    "episoda": {
       "command": "uvx",
       "args": ["episoda-alpha-mcp"]
     }

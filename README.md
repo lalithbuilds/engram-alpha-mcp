@@ -45,7 +45,7 @@ Add to your `claude_desktop_config.json`:
 ```json
 {
   "mcpServers": {
-    "engram": {
+    "episoda": {
       "command": "uvx",
       "args": ["episoda-alpha-mcp"]
     }
@@ -58,7 +58,7 @@ Add to `~/.cursor/mcp.json` or configure in **Cursor Settings > Features > MCP S
 ```json
 {
   "mcpServers": {
-    "engram": {
+    "episoda": {
       "command": "uvx",
       "args": ["episoda-alpha-mcp"]
     }
@@ -71,7 +71,7 @@ Add to `~/.codeium/windsurf/mcp_config.json`:
 ```json
 {
   "mcpServers": {
-    "engram": {
+    "episoda": {
       "command": "uvx",
       "args": ["episoda-alpha-mcp"]
     }
@@ -84,7 +84,7 @@ Add to your `cline_mcp_settings.json` or `roo_code_mcp_settings.json`:
 ```json
 {
   "mcpServers": {
-    "engram": {
+    "episoda": {
       "command": "uvx",
       "args": ["episoda-alpha-mcp"]
     }
@@ -102,7 +102,7 @@ Add to `~/.config/zed/settings.json`:
 ```json
 {
   "context_servers": {
-    "engram": {
+    "episoda": {
       "command": {
         "path": "uvx",
         "args": ["episoda-alpha-mcp"]
@@ -433,7 +433,7 @@ Add to `~/Library/Application Support/Claude/claude_desktop_config.json` (macOS)
 ```json
 {
   "mcpServers": {
-    "engram": {
+    "episoda": {
       "command": "uvx",
       "args": ["episoda-alpha-mcp"],
       "env": {
@@ -450,7 +450,7 @@ Add to `~/.cursor/mcp.json` or configure in **Cursor Settings > Features > MCP S
 ```json
 {
   "mcpServers": {
-    "engram": {
+    "episoda": {
       "command": "uvx",
       "args": ["episoda-alpha-mcp"]
     }
@@ -464,7 +464,7 @@ Add to `~/.codeium/windsurf/mcp_config.json`:
 ```json
 {
   "mcpServers": {
-    "engram": {
+    "episoda": {
       "command": "uvx",
       "args": ["episoda-alpha-mcp"]
     }
