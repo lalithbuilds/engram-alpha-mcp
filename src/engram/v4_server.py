@@ -1,19 +1,21 @@
 import struct
-from engram.v4_core import V4MemoryManager, PARTITION_SIZE, MAX_AGENTS
+from engram.v4_core import V4MemoryManager, PARTITION_SIZE, MAX_AGENTS, ZMQ_ENDPOINT
 from engram.v4_structs import unpack_delta
 import zmq
 import os
+import sys
 
 class V4ZeroMQServer:
     def __init__(self):
         self.ctx = zmq.Context.instance()
         self.pull_socket = self.ctx.socket(zmq.PULL)
         self.pull_socket.setsockopt(zmq.RCVHWM, 1000000)
-        ipc_path = "/tmp/engram_v4.ipc"
-        if os.path.exists(ipc_path):
-            try: os.remove(ipc_path)
-            except: pass
-        self.pull_socket.bind(f"ipc://{ipc_path}")
+        if sys.platform != "win32":
+            ipc_path = "/tmp/engram_v4.ipc"
+            if os.path.exists(ipc_path):
+                try: os.remove(ipc_path)
+                except: pass
+        self.pull_socket.bind(ZMQ_ENDPOINT)
         
     def start_producer(self, agent_id: int, payloads: list, vectors: list = None):
         mm = V4MemoryManager(agent_id)

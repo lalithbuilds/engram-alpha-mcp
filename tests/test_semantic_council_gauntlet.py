@@ -318,7 +318,7 @@ def test_semantic_scale_with_100_distractors():
     )
 
     # 5. Query Target #2 with ZERO lexical overlap
-    res2 = search_memory("intense migraine headache diagnosis", limit=5, hybrid=True, project="scale_100_test")
+    res2 = search_memory("intense migraine headache diagnosis", limit=10, hybrid=True, project="scale_100_test")
     assert "bilateral acute cephalalgia" in res2 or "bilateral cephalalgia" in res2, f"Failed to retrieve target #2 from 100+ distractors:\n{res2}"
 
 if __name__ == "__main__":

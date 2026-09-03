@@ -29,6 +29,7 @@ SHM_NAME = "engram_v4_arena"
 SHM_SIZE = 1024 * 1024 * 50  # 50 MB
 PARTITION_SIZE = 1024 * 1024 * 5 # 5 MB per agent
 MAX_AGENTS = 10
+ZMQ_ENDPOINT = "tcp://127.0.0.1:55557" if sys.platform == "win32" else "ipc:///tmp/engram_v4.ipc"
 
 class V4MemoryManager:
     def __init__(self, agent_id: int, create=False, zmq_context=None):
@@ -47,7 +48,7 @@ class V4MemoryManager:
         # HWM prevents producer blocking if server goes away briefly
         self.pub_socket.setsockopt(zmq.SNDHWM, 100000)
         self.pub_socket.setsockopt(zmq.LINGER, 0)
-        self.pub_socket.connect("ipc:///tmp/engram_v4.ipc")
+        self.pub_socket.connect(ZMQ_ENDPOINT)
             
     def write_delta(self, payload: str, vector: list):
         packed = pack_delta(self.agent_id, payload, vector)
