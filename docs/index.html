@@ -1,0 +1,349 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <!-- PRIMARY SEO SEARCH METADATA -->
+  <title>Engram Alpha MCP — Sovereign Memory Engine for Claude Desktop & Cursor</title>
+  <meta name="description" content="Sovereign local-first long-term memory engine for Claude Desktop, Cursor, Windsurf, and Cline. Features Apple Silicon AMX vector acceleration (1.2M+ vecs/sec), SQLite WAL, 4-Way RRF hybrid retrieval, and native Obsidian vault sync.">
+  <meta name="keywords" content="mcp, model context protocol, mcp server, claude desktop memory, cursor mcp memory, windsurf mcp, cline memory, claude code, sqlite vector search, apple silicon amx, local first memory, ai memory engine">
+  <meta name="author" content="Lalith Chandra">
+  <link rel="canonical" href="https://lalithbuilds.github.io/engram-alpha-mcp/">
+  
+  <!-- OPEN GRAPH / SOCIAL -->
+  <meta property="og:type" content="website">
+  <meta property="og:url" content="https://lalithbuilds.github.io/engram-alpha-mcp/">
+  <meta property="og:title" content="Engram Alpha MCP — Sovereign Memory Engine for Claude Desktop & Cursor">
+  <meta property="og:description" content="Sub-millisecond local-first memory for AI coding agents. 1.2M+ vecs/sec Apple AMX acceleration, SQLite WAL, 4-Way RRF, and Obsidian graph sync.">
+  <meta property="og:image" content="https://raw.githubusercontent.com/lalithbuilds/engram-alpha-mcp/master/assets/demo.gif">
+  
+  <!-- TWITTER -->
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="Engram Alpha MCP — Sovereign Memory Engine for Claude Desktop & Cursor">
+  <meta name="twitter:description" content="1.21ms p50 query latency. 100% on-device SQLite WAL memory for Claude Desktop, Cursor, and Windsurf.">
+  <meta name="twitter:image" content="https://raw.githubusercontent.com/lalithbuilds/engram-alpha-mcp/master/assets/demo.gif">
+
+  <!-- GOOGLE SCHEMA.ORG JSON-LD STRUCTURED DATA -->
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "SoftwareApplication",
+    "name": "Engram Alpha MCP",
+    "operatingSystem": "macOS, Linux, Windows",
+    "applicationCategory": "DeveloperApplication",
+    "offers": {
+      "@type": "Offer",
+      "price": "0",
+      "priceCurrency": "USD"
+    },
+    "author": {
+      "@type": "Person",
+      "name": "Lalith Chandra",
+      "url": "https://github.com/lalithbuilds"
+    },
+    "description": "Sovereign local-first long-term memory engine for Claude Desktop, Cursor, Windsurf, and Cline. Apple Silicon AMX vector acceleration (1.2M+ vecs/sec), SQLite WAL, 4-Way RRF hybrid retrieval, and Obsidian sync.",
+    "softwareVersion": "2.1.0",
+    "license": "https://opensource.org/licenses/MIT",
+    "codeRepository": "https://github.com/lalithbuilds/engram-alpha-mcp"
+  }
+  </script>
+
+  <style>
+    :root {
+      --bg: #090d16;
+      --card: #111827;
+      --border: #1f2937;
+      --text: #f3f4f6;
+      --muted: #9ca3af;
+      --accent: #38bdf8;
+      --accent-glow: rgba(56, 189, 248, 0.15);
+      --code-bg: #030712;
+      --green: #10b981;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      line-height: 1.6;
+      padding: 0 1rem;
+    }
+    .container {
+      max-width: 900px;
+      margin: 0 auto;
+      padding: 3rem 0;
+    }
+    header {
+      text-align: center;
+      margin-bottom: 3rem;
+    }
+    .badge-pill {
+      display: inline-block;
+      padding: 0.25rem 0.75rem;
+      font-size: 0.85rem;
+      font-weight: 600;
+      color: var(--accent);
+      background: var(--accent-glow);
+      border: 1px solid rgba(56, 189, 248, 0.3);
+      border-radius: 9999px;
+      margin-bottom: 1rem;
+    }
+    h1 {
+      font-size: 2.75rem;
+      font-weight: 800;
+      letter-spacing: -0.03em;
+      line-height: 1.15;
+      margin-bottom: 1rem;
+      background: linear-gradient(to right, #ffffff, #94a3b8);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+    .lead {
+      font-size: 1.2rem;
+      color: var(--muted);
+      max-width: 700px;
+      margin: 0 auto 2rem auto;
+    }
+    .command-box {
+      background: var(--code-bg);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 0.85rem 1.25rem;
+      display: inline-flex;
+      align-items: center;
+      gap: 1rem;
+      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+      color: var(--green);
+      font-size: 1.05rem;
+      box-shadow: 0 4px 20px rgba(0,0,0,0.4);
+      margin-bottom: 2rem;
+    }
+    .cta-buttons {
+      display: flex;
+      justify-content: center;
+      gap: 1rem;
+      flex-wrap: wrap;
+    }
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      padding: 0.75rem 1.5rem;
+      font-weight: 600;
+      text-decoration: none;
+      border-radius: 8px;
+      transition: all 0.2s ease;
+    }
+    .btn-primary {
+      background: #ffffff;
+      color: #000000;
+    }
+    .btn-primary:hover {
+      background: #e2e8f0;
+      transform: translateY(-2px);
+    }
+    .btn-secondary {
+      background: var(--card);
+      color: var(--text);
+      border: 1px solid var(--border);
+    }
+    .btn-secondary:hover {
+      border-color: var(--muted);
+      transform: translateY(-2px);
+    }
+    .card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 1.75rem;
+      margin-bottom: 2rem;
+    }
+    h2 {
+      font-size: 1.5rem;
+      font-weight: 700;
+      margin-bottom: 1rem;
+      color: #ffffff;
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin: 1rem 0;
+      font-size: 0.95rem;
+    }
+    th, td {
+      padding: 0.75rem;
+      text-align: left;
+      border-bottom: 1px solid var(--border);
+    }
+    th { color: var(--muted); font-weight: 600; }
+    pre {
+      background: var(--code-bg);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 1rem;
+      overflow-x: auto;
+      font-family: ui-monospace, monospace;
+      font-size: 0.9rem;
+      color: #e5e7eb;
+      margin-top: 0.75rem;
+    }
+    .features-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+      gap: 1.25rem;
+      margin-top: 1rem;
+    }
+    .feature-item {
+      background: rgba(255,255,255,0.02);
+      border: 1px solid var(--border);
+      padding: 1.25rem;
+      border-radius: 8px;
+    }
+    .feature-item h3 {
+      font-size: 1.05rem;
+      color: #ffffff;
+      margin-bottom: 0.5rem;
+    }
+    .feature-item p {
+      color: var(--muted);
+      font-size: 0.9rem;
+    }
+    footer {
+      text-align: center;
+      padding: 3rem 0;
+      color: var(--muted);
+      font-size: 0.85rem;
+      border-top: 1px solid var(--border);
+      margin-top: 4rem;
+    }
+    footer a { color: var(--accent); text-decoration: none; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <header>
+      <div class="badge-pill">v2.1.0 STABLE · SOVEREIGN LOCAL-FIRST MEMORY</div>
+      <h1>Engram Alpha MCP</h1>
+      <p class="lead">
+        Hardware-accelerated cognitive memory engine for Claude Desktop, Cursor, and Windsurf. 
+        Zero cloud egress, 1.21ms latency, on a single SQLite WAL file.
+      </p>
+      
+      <div class="command-box">
+        <span>$ uvx engram-alpha-mcp</span>
+      </div>
+
+      <div class="cta-buttons">
+        <a href="https://github.com/lalithbuilds/engram-alpha-mcp" class="btn btn-primary">View on GitHub</a>
+        <a href="#quickstart" class="btn btn-secondary">Setup Guide</a>
+        <a href="https://smithery.ai/server/@lalithbuilds/engram-alpha-mcp" class="btn btn-secondary">Smithery Verified</a>
+      </div>
+    </header>
+
+    <div class="card">
+      <h2>⚡ Latency & Architecture Comparison</h2>
+      <p style="color: var(--muted); margin-bottom: 1rem;">Why top AI agent engineers run Engram Alpha instead of cloud vector DBs:</p>
+      <table>
+        <thead>
+          <tr>
+            <th>Feature</th>
+            <th>Cloud SaaS (Mem0 / Pinecone)</th>
+            <th>Engram Alpha MCP</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><strong>Query Latency (p50)</strong></td>
+            <td>150ms – 1,090ms (network RTT)</td>
+            <td style="color: var(--green); font-weight: 700;">1.21ms (Native Apple AMX)</td>
+          </tr>
+          <tr>
+            <td><strong>Storage Substrate</strong></td>
+            <td>Remote cluster / Docker</td>
+            <td><strong>Single SQLite WAL Database</strong></td>
+          </tr>
+          <tr>
+            <td><strong>Retrieval Fusion</strong></td>
+            <td>Vector-only (drifts on code tokens)</td>
+            <td><strong>4-Way RRF (Vector + Trigram + Graph + ACT-R)</strong></td>
+          </tr>
+          <tr>
+            <td><strong>Data Sovereignty</strong></td>
+            <td>Third-party cloud data mining</td>
+            <td><strong>100% On-Chip POSIX 0600 Permissions</strong></td>
+          </tr>
+          <tr>
+            <td><strong>Obsidian Support</strong></td>
+            <td>None</td>
+            <td><strong>Native <code>[[wikilinks]]</code> to Knowledge Graph</strong></td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="card" id="quickstart">
+      <h2>🚀 10-Second Setup in Your Favorite AI Editor</h2>
+      
+      <h3 style="font-size: 1.1rem; color: var(--accent); margin-top: 1.25rem;">1. Cursor IDE (~/.cursor/mcp.json)</h3>
+      <pre><code>{
+  "mcpServers": {
+    "engram": {
+      "command": "uvx",
+      "args": ["engram-alpha-mcp"]
+    }
+  }
+}</code></pre>
+
+      <h3 style="font-size: 1.1rem; color: var(--accent); margin-top: 1.25rem;">2. Claude Desktop (claude_desktop_config.json)</h3>
+      <pre><code>{
+  "mcpServers": {
+    "engram": {
+      "command": "uvx",
+      "args": ["engram-alpha-mcp"]
+    }
+  }
+}</code></pre>
+
+      <h3 style="font-size: 1.1rem; color: var(--accent); margin-top: 1.25rem;">3. Claude Code (CLI)</h3>
+      <pre><code>claude mcp add engram uvx engram-alpha-mcp</code></pre>
+
+      <h3 style="font-size: 1.1rem; color: var(--accent); margin-top: 1.25rem;">4. Windsurf Editor (~/.codeium/windsurf/mcp_config.json)</h3>
+      <pre><code>{
+  "mcpServers": {
+    "engram": {
+      "command": "uvx",
+      "args": ["engram-alpha-mcp"]
+    }
+  }
+}</code></pre>
+    </div>
+
+    <div class="card">
+      <h2>🧠 Cognitive Engineering Pillars</h2>
+      <div class="features-grid">
+        <div class="feature-item">
+          <h3>Apple Silicon AMX</h3>
+          <p>Direct ctypes bindings to Apple's Accelerate framework (cblas_sdot) performing 1,248,500 vector comparisons/sec on-chip.</p>
+        </div>
+        <div class="feature-item">
+          <h3>Exact Code Matching</h3>
+          <p>SQLite FTS5 trigram tokenized inverted index ensures variable names, hashes, and code identifiers are never missed.</p>
+        </div>
+        <div class="feature-item">
+          <h3>Bi-Temporal Graph</h3>
+          <p>Recursive SQL CTE traversal over subject-predicate-object triples with valid_from and valid_until timeline anchors.</p>
+        </div>
+        <div class="feature-item">
+          <h3>ACT-R Cognitive Decay</h3>
+          <p>Implements power-law memory decay with spaced practice reinforcement—frequently accessed memories strengthen naturally.</p>
+        </div>
+      </div>
+    </div>
+
+    <footer>
+      <p>Engram Alpha is open-source under the <a href="https://opensource.org/licenses/MIT">MIT License</a>.</p>
+      <p>Created by <a href="https://github.com/lalithbuilds">Lalith Chandra</a> · Built for sovereign AI builders.</p>
+    </footer>
+  </div>
+</body>
+</html>
