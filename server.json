@@ -1,0 +1,19 @@
+{
+  "$schema": "https://static.modelcontextprotocol.io/schemas/2025-12-11/server.schema.json",
+  "name": "io.github.lalithbuilds/engram-alpha-mcp",
+  "version": "2.1.0",
+  "description": "Engram Alpha MCP: Sovereign Cognitive Memory Engine with Hardware AMX & 4-Way RRF",
+  "repository": {
+    "url": "https://github.com/lalithbuilds/engram-alpha-mcp",
+    "type": "git"
+  },
+  "homepage": "https://lalithbuilds.github.io/engram-alpha-mcp/",
+  "license": "MIT",
+  "packages": [
+    {
+      "type": "pypi",
+      "name": "engram-alpha-mcp",
+      "version": "2.1.0"
+    }
+  ]
+}
