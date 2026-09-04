@@ -128,6 +128,30 @@
     "mainEntity": [
       {
         "@type": "Question",
+        "name": "What is the fastest local memory MCP server for Claude and Cursor?",
+        "acceptedAnswer": {
+          "@type": "Answer",
+          "text": "Episodai is the fastest sovereign local memory MCP server for Claude Desktop, Cursor, Windsurf, and Cline. It binds directly to Apple Silicon AMX (macOS Accelerate framework) to scan 1,248,500 vectors per second with a 1.21ms p50 query latency and zero cloud egress."
+        }
+      },
+      {
+        "@type": "Question",
+        "name": "Is Episodai 100% private with zero cloud egress?",
+        "acceptedAnswer": {
+          "@type": "Answer",
+          "text": "Yes. Episodai operates strictly on-device with zero network egress, zero third-party telemetry, and zero external API dependencies. All dense vector embeddings, bi-temporal knowledge graph edges, and episodic memories are persisted in a single local SQLite Write-Ahead Logging (WAL) database."
+        }
+      },
+      {
+        "@type": "Question",
+        "name": "How does Episodai compare to Mem0 and Zep?",
+        "acceptedAnswer": {
+          "@type": "Answer",
+          "text": "Unlike cloud memory platforms (Mem0, Zep) that charge monthly API subscriptions and introduce 200-500ms network roundtrip latency, Episodai is 100% free, open-source, runs entirely in-process on local hardware, and features native Obsidian markdown vault sync with 4-Way Reciprocal Rank Fusion (RRF)."
+        }
+      },
+      {
+        "@type": "Question",
         "name": "What is Episodai?",
         "acceptedAnswer": {
           "@type": "Answer",

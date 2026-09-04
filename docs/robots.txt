@@ -1,3 +1,27 @@
 User-agent: *
 Allow: /
-Sitemap: https://lalithbuilds.github.io/episoda-alpha-mcp/sitemap.xml
+
+# Canonical Sitemaps & Machine-Readable LLM Directives
+Sitemap: https://lalithbuilds.github.io/episodai/sitemap.xml
+Allow: /llms.txt
+Allow: /llms-full.txt
+Allow: /feed.xml
+
+# Explicit AI Agent Crawler Permissions
+User-agent: GPTBot
+Allow: /
+
+User-agent: ClaudeBot
+Allow: /
+
+User-agent: PerplexityBot
+Allow: /
+
+User-agent: Google-Extended
+Allow: /
+
+User-agent: Applebot-Extended
+Allow: /
+
+User-agent: CCBot
+Allow: /
