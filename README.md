@@ -164,7 +164,7 @@ Episoda Alpha operates across a multi-tier memory architecture designed for sub-
 
 ```
 ┌─────────────────────────────────────────────────────────────────────────────────────────────┐
-│                                   ENGRAM ALPHA ARCHITECTURE                                 │
+│                                   EPISODA ALPHA ARCHITECTURE                                 │
 ├─────────────────────────────────────────────────────────────────────────────────────────────┤
 │                                                                                             │
 │  [ CLIENT LAYER ]                                                                           │
@@ -214,7 +214,7 @@ sequenceDiagram
     autonumber
     actor UserAgent as AI Agent (Cursor / ChatGPT / Claude)
     participant Gateway as Transport (Stdio MCP / HTTP Bridge)
-    participant Kernel as Engram RRF & Graph Engine
+    participant Kernel as Episoda RRF & Graph Engine
     participant AMX as Hardware Vector Unit (AMX / BLAS)
     participant Storage as SQLite WAL & FTS5 Database
 
