@@ -9,6 +9,9 @@
   <a href="https://glama.ai/mcp/servers/lalithbuilds/episoda-alpha-mcp"><img src="https://glama.ai/mcp/servers/lalithbuilds/episoda-alpha-mcp/badges/score.svg" alt="Glama Score"></a>
   <a href="https://github.com/lalithbuilds/episoda-alpha-mcp"><img src="https://img.shields.io/github/stars/lalithbuilds/episoda-alpha-mcp?style=social" alt="GitHub Stars"></a>
   <a href="README_zh.md"><img src="https://img.shields.io/badge/文档-简体中文-red.svg" alt="Chinese Docs"></a>
+  <a href="README_ja.md"><img src="https://img.shields.io/badge/ドキュメント-日本語-blue.svg" alt="Japanese Docs"></a>
+  <a href="README_es.md"><img src="https://img.shields.io/badge/Documentación-Español-orange.svg" alt="Spanish Docs"></a>
+  <a href="README_de.md"><img src="https://img.shields.io/badge/Dokumentation-Deutsch-black.svg" alt="German Docs"></a>
 </p>
 
 <p align="center">
