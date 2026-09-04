@@ -170,7 +170,7 @@ Episoda Alpha operates across a multi-tier memory architecture designed for sub-
 │  [ CLIENT LAYER ]                                                                           │
 │  ┌───────────────────────┐  ┌───────────────────────┐  ┌────────────────────────────────┐  │
 │  │   Desktop MCP IDEs    │  │    Web Agent Swarms   │  │       CLI & Background         │  │
-│  │ Claude Desktop, Cursor│  │ ChatGPT Custom GPTs,  │  │  engram save / search / watch  │  │
+│  │ Claude Desktop, Cursor│  │ ChatGPT Custom GPTs,  │  │  episoda save / search / watch  │  │
 │  │   Windsurf, Zed, AGY  │  │ Claude Web, Gemini Web│  │    Live Obsidian Vault Sync    │  │
 │  └───────────┬───────────┘  └───────────┬───────────┘  └───────────────┬────────────────┘  │
 │              │                          │                              │                    │
@@ -293,7 +293,7 @@ Built-in HTTP & Server-Sent Events (SSE) gateway compliant with OpenAPI 3.0. All
 > [!IMPORTANT]
 > **Recommended Install for Full Deep Neural Semantic Search & Native ANN Vector Indexing:**
 > ```bash
-> pip install "engram-alpha[all]"
+> pip install "episoda-alpha-mcp[all]"
 > # Or from local clone:
 > pip install -e ".[all]"
 > ```
@@ -315,7 +315,7 @@ Episoda Alpha provides a fast, developer-first command-line interface:
 
 #### Save Memory
 ```bash
-engram save "SQLite WAL mode allows multiple concurrent readers alongside a single writer" \
+episoda save "SQLite WAL mode allows multiple concurrent readers alongside a single writer" \
   --category architecture \
   --importance 8 \
   --project system_core
@@ -323,60 +323,60 @@ engram save "SQLite WAL mode allows multiple concurrent readers alongside a sing
 
 #### Autonomous Fact & Graph Extraction
 ```bash
-engram extract "RayEngine uses SQLiteWAL to maintain persistent state. RayEngine connects_to FastMCP." \
+episoda extract "RayEngine uses SQLiteWAL to maintain persistent state. RayEngine connects_to FastMCP." \
   --project system_core
 ```
 
 #### 4-Way Semantic Recall
 ```bash
-engram search "concurrent reader access in sqlite" --limit 3 --project system_core
+episoda search "concurrent reader access in sqlite" --limit 3 --project system_core
 ```
 
 #### Relational Knowledge Graph Operations
 ```bash
 # Save an explicit knowledge graph relation
-engram graph "FastMCP" "implements" "StdioProtocol" --weight 1.0 --project system_core
+episoda graph "FastMCP" "implements" "StdioProtocol" --weight 1.0 --project system_core
 
 # Query dynamic multi-hop graph relations
-engram query-graph "FastMCP" --depth 2 --project system_core
+episoda query-graph "FastMCP" --depth 2 --project system_core
 
 # Inspect ASCII & Mermaid relational network topology
-engram inspect "FastMCP" --depth 2
+episoda inspect "FastMCP" --depth 2
 ```
 
 #### Memory Deduplication & Semantic Merging
 Scans the database for duplicate concepts, merges access counts and edges, and removes redundant records:
 ```bash
-engram dedupe --threshold 0.92 --project system_core
+episoda dedupe --threshold 0.92 --project system_core
 ```
 
 #### Episodic Reflection & Synthesis
 Synthesizes atomic memory records into consolidated high-level insights:
 ```bash
-engram reflect "SQLiteWAL" --project system_core
+episoda reflect "SQLiteWAL" --project system_core
 ```
 
 #### Real-Time Obsidian Vault Ingestion & Live Sync Daemon
 ```bash
 # One-time bulk vault ingestion
-engram ingest-obsidian /path/to/ObsidianVault --project personal_notes
+episoda ingest-obsidian /path/to/ObsidianVault --project personal_notes
 
 # Live filesystem sync daemon (auto-ingests on note saves)
-engram watch /path/to/ObsidianVault --project personal_notes
+episoda watch /path/to/ObsidianVault --project personal_notes
 ```
 
 #### Hardware Benchmark & Telemetry
 ```bash
 # Test active hardware matrix coprocessor throughput
-engram benchmark --vectors 25000
+episoda benchmark --vectors 25000
 
 # View database metrics, graph counts, and active tier
-engram stats
+episoda stats
 ```
 
 #### Universal HTTP & OpenAPI Gateway
 ```bash
-engram serve --host 0.0.0.0 --port 8000
+episoda serve --host 0.0.0.0 --port 8000
 ```
 
 ---
@@ -388,7 +388,7 @@ You can connect web-based agents to your sovereign on-device memory using the na
 ```bash
 # 1. Start the HTTP Gateway with an optional API key
 export ENGRAM_API_KEY="your-secret-sovereign-key"
-engram serve --port 8000
+episoda serve --port 8000
 ```
 
 ### 1. ChatGPT Custom GPT Actions
@@ -422,7 +422,7 @@ Use the interactive web dashboard or API endpoints directly:
 ### 1. Automated Setup for Claude Desktop
 Episoda Alpha can automatically configure your `claude_desktop_config.json`:
 ```bash
-engram setup
+episoda setup
 ```
 
 ### 2. Manual Configuration
