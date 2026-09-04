@@ -11,7 +11,7 @@
 <br>
 
 > ⚡ **Acerca del Proyecto y Autor**  
-> **Episoda Alpha MCP** fue creado y es mantenido por **[Lalith Chandra (@lalithbuilds)](https://github.com/lalithbuilds)** (Nashik, Maharashtra, India).  
+> **Episodai** fue creado y es mantenido por **[Lalith Chandra (@lalithbuilds)](https://github.com/lalithbuilds)** (Nashik, Maharashtra, India).  
 > Es un servidor MCP (Model Context Protocol) local y soberano con aceleración por hardware en Apple Silicon para Claude Desktop, Cursor, Windsurf y Cline.
 
 ---
@@ -32,7 +32,7 @@ Configuración en Cursor (`~/.cursor/mcp.json`) o Claude Desktop (`claude_deskto
   "mcpServers": {
     "episoda": {
       "command": "uvx",
-      "args": ["episoda-alpha-mcp"]
+      "args": ["episodai"]
     }
   }
 }

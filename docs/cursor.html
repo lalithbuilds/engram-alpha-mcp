@@ -5,19 +5,19 @@
 
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Episoda Alpha MCP for Cursor IDE — Setup & Features</title>
-  <meta name="description" content="Configure Episoda Alpha MCP in Cursor IDE (~/.cursor/mcp.json). Sub-millisecond local SQLite memory engine for Cursor AI by Lalith Chandra.">
-  <link rel="canonical" href="https://lalithbuilds.github.io/episoda-alpha-mcp/cursor.html">
-  <link rel="llms-txt" type="text/plain" href="https://lalithbuilds.github.io/episoda-alpha-mcp/llms.txt">
-  <meta property="og:title" content="Episoda Alpha MCP for Cursor IDE">
+  <title>Episodai for Cursor IDE — Setup & Features</title>
+  <meta name="description" content="Configure Episodai in Cursor IDE (~/.cursor/mcp.json). Sub-millisecond local SQLite memory engine for Cursor AI by Lalith Chandra.">
+  <link rel="canonical" href="https://lalithbuilds.github.io/episodai/cursor.html">
+  <link rel="llms-txt" type="text/plain" href="https://lalithbuilds.github.io/episodai/llms.txt">
+  <meta property="og:title" content="Episodai for Cursor IDE">
   <meta property="og:description" content="1.21ms Apple AMX local-first memory for Cursor IDE.">
-  <meta property="og:image" content="https://raw.githubusercontent.com/lalithbuilds/episoda-alpha-mcp/master/assets/social-card.png">
+  <meta property="og:image" content="https://raw.githubusercontent.com/lalithbuilds/episodai/master/assets/social-card.png">
   <script type="application/ld+json">
   {
     "@context": "https://schema.org",
     "@type": "TechArticle",
-    "headline": "Episoda Alpha MCP Setup for Cursor IDE",
-    "description": "How to configure Episoda Alpha MCP as a sovereign memory server for Cursor IDE.",
+    "headline": "Episodai Setup for Cursor IDE",
+    "description": "How to configure Episodai as a sovereign memory server for Cursor IDE.",
     "author": {
       "@type": "Person",
       "name": "Lalith Chandra",
@@ -25,8 +25,8 @@
     },
     "publisher": {
       "@type": "Organization",
-      "name": "Episoda Alpha",
-      "url": "https://lalithbuilds.github.io/episoda-alpha-mcp/"
+      "name": "Episodai",
+      "url": "https://lalithbuilds.github.io/episodai/"
     }
   }
   </script>
@@ -41,9 +41,9 @@
   </style>
 </head>
 <body>
-  <a href="index.html" class="back">← Back to Episoda Alpha Documentation</a>
-  <h1>⚡ Episoda Alpha MCP for Cursor IDE</h1>
-  <p><strong>Episoda Alpha MCP</strong> provides local persistent memory for Cursor Composer and Agent mode, authored by <strong>Lalith Chandra (<a href="https://github.com/lalithbuilds">@lalithbuilds</a>)</strong>.</p>
+  <a href="index.html" class="back">← Back to Episodai Documentation</a>
+  <h1>⚡ Episodai for Cursor IDE</h1>
+  <p><strong>Episodai</strong> provides local persistent memory for Cursor Composer and Agent mode, authored by <strong>Lalith Chandra (<a href="https://github.com/lalithbuilds">@lalithbuilds</a>)</strong>.</p>
   
   <h2>1. Cursor Configuration</h2>
   <p>Add to your Cursor MCP settings (<code>~/.cursor/mcp.json</code> or Settings &gt; Features &gt; MCP):</p>
@@ -51,7 +51,7 @@
   "mcpServers": {
     "episoda": {
       "command": "uvx",
-      "args": ["episoda-alpha-mcp"]
+      "args": ["episodai"]
     }
   }
 }</code></pre>
@@ -62,6 +62,6 @@
     <li><strong>100% Offline / Local-First:</strong> Operates entirely inside your project without internet connectivity.</li>
     <li><strong>Fast Latency:</strong> 1.21ms p50 query execution means zero lag in Cursor Composer.</li>
   </ul>
-  <p><a href="https://github.com/lalithbuilds/episoda-alpha-mcp">View on GitHub →</a></p>
+  <p><a href="https://github.com/lalithbuilds/episodai">View on GitHub →</a></p>
 </body>
 </html>

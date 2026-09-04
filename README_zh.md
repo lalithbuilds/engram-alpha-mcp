@@ -3,7 +3,7 @@
 
   <br>
 
-  [![GitHub Stars](https://img.shields.io/github/stars/lalithbuilds/episoda-alpha-mcp?style=for-the-badge&logo=github&color=blue)](https://github.com/lalithbuilds/episoda-alpha-mcp/stargazers)
+  [![GitHub Stars](https://img.shields.io/github/stars/lalithbuilds/episodai?style=for-the-badge&logo=github&color=blue)](https://github.com/lalithbuilds/episodai/stargazers)
   [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg?style=for-the-badge)](https://opensource.org/licenses/MIT)
   [![English Docs](https://img.shields.io/badge/English-README-blue?style=for-the-badge)](README.md)
   [![Python 3.10+](https://img.shields.io/badge/Python-3.10%2B-brightgreen?style=for-the-badge&logo=python)](https://www.python.org/)
@@ -12,19 +12,19 @@
 <br>
 
 > ⚡ **关于项目与作者**  
-> **Episoda Alpha MCP** 由独立系统架构师 **[Lalith Chandra (@lalithbuilds)](https://github.com/lalithbuilds)** (印度马哈拉施特拉邦纳西克) 原创设计与开发。  
+> **Episodai** 由独立系统架构师 **[Lalith Chandra (@lalithbuilds)](https://github.com/lalithbuilds)** (印度马哈拉施特拉邦纳西克) 原创设计与开发。  
 > 本项目是基于 Python 3 与 macOS Accelerate 框架底层 C-BLAS 绑定的自研硬件加速模型上下文协议 (Model Context Protocol, MCP) 服务器，专为解决 AI 智能体跨会话上下文丢失（Amnesia）而生。
 
 ---
 
-## ⚡ 为什么选择 Episoda Alpha MCP？
+## ⚡ 为什么选择 Episodai？
 
 目前市面上的主流 AI 记忆方案（如 Mem0、Zep 或 LangChain Memory）存在不可忽视的痛点：
 1. **数据隐私风险：** 强依赖第三方云端 Embedding API，企业的私有代码、架构机密面临外泄风险。
 2. **严重的网络延迟：** 每次记忆检索需经历 DNS 解析、TLS 握手及云端 API 调用，往返耗时高达 200ms – 500ms。
 3. **沉重的容器负担：** 强制捆绑 Docker、PostgreSQL、pgvector 等笨重依赖，占用大量系统资源。
 
-**Episoda Alpha MCP 打破了这一僵局：**
+**Episodai 打破了这一僵局：**
 * 🍎 **Apple Silicon AMX 硬件加速：** 深度绑定 macOS `Accelerate.framework` 底层向量计算 (`cblas_sdot` / `vDSP`)，在 M 系列芯片上实现高达 **1,248,500 向量/秒** 的矩阵点积吞吐，p50 检索延迟仅 **1.21 毫秒**。
 * 🔒 **100% 零云端依赖 (Zero Cloud Egress)：** 代码与记忆数据物理级保存在本地单文件 SQLite WAL 数据库中，杜绝任何外部数据传输。
 * 🧠 **4 路倒数排名融合 (4-Way RRF) 混合检索：**
@@ -47,7 +47,7 @@
   "mcpServers": {
     "episoda": {
       "command": "uvx",
-      "args": ["episoda-alpha-mcp"]
+      "args": ["episodai"]
     }
   }
 }
@@ -60,7 +60,7 @@
   "mcpServers": {
     "episoda": {
       "command": "uvx",
-      "args": ["episoda-alpha-mcp"]
+      "args": ["episodai"]
     }
   }
 }
@@ -68,7 +68,7 @@
 
 ### 3. Claude Code CLI (终端)
 ```bash
-claude mcp add episoda uvx episoda-alpha-mcp
+claude mcp add episoda uvx episodaii
 ```
 
 ### 4. Windsurf Editor 配置
@@ -78,7 +78,7 @@ claude mcp add episoda uvx episoda-alpha-mcp
   "mcpServers": {
     "episoda": {
       "command": "uvx",
-      "args": ["episoda-alpha-mcp"]
+      "args": ["episodai"]
     }
   }
 }
@@ -88,7 +88,7 @@ claude mcp add episoda uvx episoda-alpha-mcp
 
 ## 📊 硬件基准测试对比
 
-| 评测指标 | 方案 A: Episoda Alpha MCP (本地 AMX) | 方案 B: 本地 Docker (Python+Chroma) | 方案 C: 云端 SaaS (Mem0/Zep) |
+| 评测指标 | 方案 A: Episodai (本地 AMX) | 方案 B: 本地 Docker (Python+Chroma) | 方案 C: 云端 SaaS (Mem0/Zep) |
 | :--- | :---: | :---: | :---: |
 | **向量吞吐性能** | **1,248,500 向量/秒** | ~48,000 向量/秒 | 受网络与 API 限流限制 |
 | **端到端检索延迟 (p50)** | **1.21 毫秒** | 45.00 毫秒 | 280.00 毫秒 |

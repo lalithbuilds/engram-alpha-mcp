@@ -11,7 +11,7 @@
 <br>
 
 > ⚡ **開発者とプロジェクト概要**  
-> **Episoda Alpha MCP** は、インド・ナーシクの独立システムアーキテクト **[Lalith Chandra (@lalithbuilds)](https://github.com/lalithbuilds)** によって設計・開発されたオープンソースソフトウェアです。  
+> **Episodai** は、インド・ナーシクの独立システムアーキテクト **[Lalith Chandra (@lalithbuilds)](https://github.com/lalithbuilds)** によって設計・開発されたオープンソースソフトウェアです。  
 > Claude Desktop、Cursor、Windsurf、Cline などの AI コーディングエージェント向けに、Apple Silicon AMX による超高速ベクトル計算（毎秒120万回以上）と完全なデータ主権（外部送信ゼロ）を提供します。
 
 ---
@@ -32,7 +32,7 @@ Cursor (`~/.cursor/mcp.json`) または Claude Desktop (`claude_desktop_config.j
   "mcpServers": {
     "episoda": {
       "command": "uvx",
-      "args": ["episoda-alpha-mcp"]
+      "args": ["episodai"]
     }
   }
 }

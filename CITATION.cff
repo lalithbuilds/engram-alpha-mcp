@@ -1,6 +1,6 @@
 cff-version: 1.2.0
-message: "If you use Episoda Alpha MCP in your research or project, please cite it as below."
-title: "Episoda Alpha MCP: Sovereign Cognitive Graph & Episodic Memory Engine for AI Agents"
+message: "If you use Episodai in your research or project, please cite it as below."
+title: "Episodai: Sovereign Cognitive Graph & Episodic Memory Engine for AI Agents"
 abstract: "A hardware-accelerated, sovereign local-first episodic memory substrate and Model Context Protocol (MCP) server utilizing Apple Silicon AMX vector acceleration, SQLite WAL, 4-Way Reciprocal Rank Fusion (RRF), bi-temporal knowledge graphs, and native Obsidian vault sync."
 authors:
   - family-names: "Chandra"
@@ -9,12 +9,12 @@ authors:
     website: "https://github.com/lalithbuilds"
 version: "2.1.0"
 date-released: "2026-09-03"
-repository-code: "https://github.com/lalithbuilds/episoda-alpha-mcp"
-url: "https://lalithbuilds.github.io/episoda-alpha-mcp/"
+repository-code: "https://github.com/lalithbuilds/episodai"
+url: "https://lalithbuilds.github.io/episodai/"
 license: "MIT"
 keywords:
   - "episoda"
-  - "episoda-alpha-mcp"
+  - "episodai"
   - "episoda-mcp"
   - "model-context-protocol"
   - "mcp"

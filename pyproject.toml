@@ -3,7 +3,7 @@ requires = ["hatchling"]
 build-backend = "hatchling.build"
 
 [project]
-name = "episoda-alpha-mcp"
+name = "episodai"
 version = "2.1.0"
 description = "Episoda Alpha MCP: Sovereign Cognitive Graph & Episodic Memory Engine with Hardware AMX & 4-Way RRF"
 readme = "README.md"
@@ -11,9 +11,9 @@ requires-python = ">=3.10"
 license = { text = "MIT" }
 authors = [{ name = "Lalith Chandra", email = "lalith070804@gmail.com" }]
 keywords = [
-    "episoda",
-    "episoda-alpha-mcp",
-    "episoda-mcp",
+    "episodai",
+    "ai-memory",
+    "mcp",
     "model-context-protocol",
     "mcp",
     "mcp-server",
@@ -38,11 +38,11 @@ dependencies = [
 ]
 
 [project.urls]
-Homepage = "https://lalithbuilds.github.io/episoda-alpha-mcp/"
-Documentation = "https://lalithbuilds.github.io/episoda-alpha-mcp/"
-Repository = "https://github.com/lalithbuilds/episoda-alpha-mcp"
-Issues = "https://github.com/lalithbuilds/episoda-alpha-mcp/issues"
-Changelog = "https://github.com/lalithbuilds/episoda-alpha-mcp/releases"
+Homepage = "https://lalithbuilds.github.io/episodai/"
+Documentation = "https://lalithbuilds.github.io/episodai/"
+Repository = "https://github.com/lalithbuilds/episodai"
+Issues = "https://github.com/lalithbuilds/episodai/issues"
+Changelog = "https://github.com/lalithbuilds/episodai/releases"
 
 [project.optional-dependencies]
 all = []
@@ -52,6 +52,7 @@ dev = [
 ]
 
 [project.scripts]
+episodai = "engram.cli:main"
 episoda = "engram.cli:main"
 episoda-mcp = "engram.server:main"
 episoda-alpha-mcp = "engram.server:main"

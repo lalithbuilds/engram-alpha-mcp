@@ -1,49 +1,49 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
   <url>
-    <loc>https://lalithbuilds.github.io/episoda-alpha-mcp/</loc>
+    <loc>https://lalithbuilds.github.io/episodai/</loc>
     <lastmod>2026-09-03</lastmod>
     <changefreq>daily</changefreq>
     <priority>1.0</priority>
   </url>
   <url>
-    <loc>https://lalithbuilds.github.io/episoda-alpha-mcp/claude.html</loc>
+    <loc>https://lalithbuilds.github.io/episodai/claude.html</loc>
     <lastmod>2026-09-03</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.9</priority>
   </url>
   <url>
-    <loc>https://lalithbuilds.github.io/episoda-alpha-mcp/cursor.html</loc>
+    <loc>https://lalithbuilds.github.io/episodai/cursor.html</loc>
     <lastmod>2026-09-03</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.9</priority>
   </url>
   <url>
-    <loc>https://lalithbuilds.github.io/episoda-alpha-mcp/windsurf.html</loc>
+    <loc>https://lalithbuilds.github.io/episodai/windsurf.html</loc>
     <lastmod>2026-09-03</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.9</priority>
   </url>
   <url>
-    <loc>https://lalithbuilds.github.io/episoda-alpha-mcp/cline.html</loc>
+    <loc>https://lalithbuilds.github.io/episodai/cline.html</loc>
     <lastmod>2026-09-03</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.9</priority>
   </url>
   <url>
-    <loc>https://lalithbuilds.github.io/episoda-alpha-mcp/feed.xml</loc>
+    <loc>https://lalithbuilds.github.io/episodai/feed.xml</loc>
     <lastmod>2026-09-03</lastmod>
     <changefreq>daily</changefreq>
     <priority>0.8</priority>
   </url>
   <url>
-    <loc>https://lalithbuilds.github.io/episoda-alpha-mcp/llms.txt</loc>
+    <loc>https://lalithbuilds.github.io/episodai/llms.txt</loc>
     <lastmod>2026-09-03</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.8</priority>
   </url>
   <url>
-    <loc>https://lalithbuilds.github.io/episoda-alpha-mcp/llms-full.txt</loc>
+    <loc>https://lalithbuilds.github.io/episodai/llms-full.txt</loc>
     <lastmod>2026-09-03</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.8</priority>

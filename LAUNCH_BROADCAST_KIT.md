@@ -2,7 +2,7 @@
 
 Author: Lalith Chandra (@lalithbuilds), Nashik, Maharashtra
 Repos:
-- Flagship: https://github.com/lalithbuilds/episoda-alpha-mcp
+- Flagship: https://github.com/lalithbuilds/episodai
 - Standard: https://github.com/lalithbuilds/episoda-core-mcp
 
 ---
@@ -20,7 +20,7 @@ Existing agent memory tools either:
 
 Episoda is an open-source Model Context Protocol (MCP) server running 100% locally with zero cloud egress:
 
-- **Episoda Alpha:** Leverages Apple Silicon AMX (Accelerate.framework `cblas_sdot`) to scan 1,248,500 vecs/sec at 1.21ms p50 latency. Fuses dense vectors + FTS5 trigrams + knowledge graph CTEs + ACT-R cognitive decay (4-Way RRF). Syncs natively with Obsidian vaults.
+- **Episodai:** Leverages Apple Silicon AMX (Accelerate.framework `cblas_sdot`) to scan 1,248,500 vecs/sec at 1.21ms p50 latency. Fuses dense vectors + FTS5 trigrams + knowledge graph CTEs + ACT-R cognitive decay (4-Way RRF). Syncs natively with Obsidian vaults.
 - **Episoda Core:** Strictly 0 dependencies. Pure Python 3 standard library with Ebbinghaus exponential auto-decay and SQLite WAL.
 
 Run it in Claude Desktop or Cursor instantly:
@@ -29,14 +29,14 @@ Run it in Claude Desktop or Cursor instantly:
   "mcpServers": {
     "episoda": {
       "command": "uvx",
-      "args": ["episoda-alpha-mcp"]
+      "args": ["episodai"]
     }
   }
 }
 ```
 
-GitHub: https://github.com/lalithbuilds/episoda-alpha-mcp
-Documentation: https://lalithbuilds.github.io/episoda-alpha-mcp/
+GitHub: https://github.com/lalithbuilds/episodai
+Documentation: https://lalithbuilds.github.io/episodai/
 
 Would love your feedback on our benchmark harness and multi-tier concurrency testing.
 
@@ -52,7 +52,7 @@ Introducing **Episoda MCP**: Sovereign, hardware-accelerated local memory for AI
 ⚡ 1,248,500 vecs/sec (Apple Silicon AMX)
 ⏱️ 1.21ms p50 latency
 🔒 100% zero cloud egress
-💎 Zero-config `uvx episoda-alpha-mcp`
+💎 Zero-config `uvx episodaii`
 
 Thread 🧵👇
 
@@ -64,11 +64,11 @@ Episoda runs in-process on a single SQLite WAL file with native Obsidian vault s
 
 **Post 3:**
 We built two editions:
-1. **Episoda Alpha**: AMX SIMD acceleration + bi-temporal knowledge graph + fastembed.
+1. **Episodai**: AMX SIMD acceleration + bi-temporal knowledge graph + fastembed.
 2. **Episoda Core**: Strictly ZERO external dependencies. Runs on pure Python standard library (`sqlite3`, `json`, `hashlib`).
 
-Repo: https://github.com/lalithbuilds/episoda-alpha-mcp
-Docs: https://lalithbuilds.github.io/episoda-alpha-mcp/
+Repo: https://github.com/lalithbuilds/episodai
+Docs: https://lalithbuilds.github.io/episodai/
 
 Star ⭐ and try it in Cursor today!
 
@@ -95,11 +95,11 @@ Instant Cursor / Claude Desktop setup:
   "mcpServers": {
     "episoda": {
       "command": "uvx",
-      "args": ["episoda-alpha-mcp"]
+      "args": ["episodai"]
     }
   }
 }
 ```
 
-Code is MIT licensed: https://github.com/lalithbuilds/episoda-alpha-mcp
-Docs: https://lalithbuilds.github.io/episoda-alpha-mcp/
+Code is MIT licensed: https://github.com/lalithbuilds/episodai
+Docs: https://lalithbuilds.github.io/episodai/

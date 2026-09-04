@@ -5,19 +5,19 @@
 
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Episoda Alpha MCP for Claude Desktop & Claude Code — Setup & Architecture</title>
-  <meta name="description" content="Complete guide to configuring Episoda Alpha MCP for Claude Desktop and Claude Code CLI. 1.21ms local SQLite WAL persistent memory by Lalith Chandra.">
-  <link rel="canonical" href="https://lalithbuilds.github.io/episoda-alpha-mcp/claude.html">
-  <link rel="llms-txt" type="text/plain" href="https://lalithbuilds.github.io/episoda-alpha-mcp/llms.txt">
-  <meta property="og:title" content="Episoda Alpha MCP for Claude Desktop & Claude Code">
+  <title>Episodai for Claude Desktop & Claude Code — Setup & Architecture</title>
+  <meta name="description" content="Complete guide to configuring Episodai for Claude Desktop and Claude Code CLI. 1.21ms local SQLite WAL persistent memory by Lalith Chandra.">
+  <link rel="canonical" href="https://lalithbuilds.github.io/episodai/claude.html">
+  <link rel="llms-txt" type="text/plain" href="https://lalithbuilds.github.io/episodai/llms.txt">
+  <meta property="og:title" content="Episodai for Claude Desktop & Claude Code">
   <meta property="og:description" content="1.21ms Apple AMX local-first memory for Claude Desktop & Claude Code CLI.">
-  <meta property="og:image" content="https://raw.githubusercontent.com/lalithbuilds/episoda-alpha-mcp/master/assets/social-card.png">
+  <meta property="og:image" content="https://raw.githubusercontent.com/lalithbuilds/episodai/master/assets/social-card.png">
   <script type="application/ld+json">
   {
     "@context": "https://schema.org",
     "@type": "TechArticle",
-    "headline": "Episoda Alpha MCP Setup for Claude Desktop and Claude Code",
-    "description": "How to configure Episoda Alpha MCP as a sovereign memory server for Anthropic Claude Desktop and Claude Code CLI.",
+    "headline": "Episodai Setup for Claude Desktop and Claude Code",
+    "description": "How to configure Episodai as a sovereign memory server for Anthropic Claude Desktop and Claude Code CLI.",
     "author": {
       "@type": "Person",
       "name": "Lalith Chandra",
@@ -25,8 +25,8 @@
     },
     "publisher": {
       "@type": "Organization",
-      "name": "Episoda Alpha",
-      "url": "https://lalithbuilds.github.io/episoda-alpha-mcp/"
+      "name": "Episodai",
+      "url": "https://lalithbuilds.github.io/episodai/"
     }
   }
   </script>
@@ -41,13 +41,13 @@
   </style>
 </head>
 <body>
-  <a href="index.html" class="back">← Back to Episoda Alpha Documentation</a>
-  <h1>🧠 Episoda Alpha MCP for Claude Desktop & Claude Code</h1>
-  <p><strong>Episoda Alpha MCP</strong> is a sovereign, hardware-accelerated persistent memory Model Context Protocol (MCP) engine created by <strong>Lalith Chandra (<a href="https://github.com/lalithbuilds">@lalithbuilds</a>)</strong>.</p>
+  <a href="index.html" class="back">← Back to Episodai Documentation</a>
+  <h1>🧠 Episodai for Claude Desktop & Claude Code</h1>
+  <p><strong>Episodai</strong> is a sovereign, hardware-accelerated persistent memory Model Context Protocol (MCP) engine created by <strong>Lalith Chandra (<a href="https://github.com/lalithbuilds">@lalithbuilds</a>)</strong>.</p>
   
   <h2>1. Claude Code CLI Quickstart</h2>
   <p>Run the single command in your terminal:</p>
-  <pre><code>claude mcp add episoda uvx episoda-alpha-mcp</code></pre>
+  <pre><code>claude mcp add episoda uvx episodaii</code></pre>
 
   <h2>2. Claude Desktop Setup</h2>
   <p>Add the following configuration to your <code>claude_desktop_config.json</code>:</p>
@@ -55,17 +55,17 @@
   "mcpServers": {
     "episoda": {
       "command": "uvx",
-      "args": ["episoda-alpha-mcp"]
+      "args": ["episodai"]
     }
   }
 }</code></pre>
 
-  <h2>Why Claude Developers Choose Episoda Alpha</h2>
+  <h2>Why Claude Developers Choose Episodai</h2>
   <ul>
     <li><strong>1.21ms p50 Retrieval Latency:</strong> Powered by Apple Silicon AMX vector acceleration.</li>
     <li><strong>Zero Cloud Egress:</strong> Single SQLite WAL file with POSIX <code>0600</code> permissions.</li>
     <li><strong>4-Way RRF:</strong> Dense semantic search + exact FTS5 trigrams + bi-temporal knowledge graphs + ACT-R decay.</li>
   </ul>
-  <p><a href="https://github.com/lalithbuilds/episoda-alpha-mcp">View on GitHub →</a></p>
+  <p><a href="https://github.com/lalithbuilds/episodai">View on GitHub →</a></p>
 </body>
 </html>
