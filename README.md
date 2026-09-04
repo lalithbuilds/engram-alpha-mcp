@@ -8,6 +8,7 @@
   <a href="https://smithery.ai/server/@lalithbuilds/episoda-alpha-mcp"><img src="https://smithery.ai/badge/@lalithbuilds/episoda-alpha-mcp" alt="Smithery Badge"></a>
   <a href="https://glama.ai/mcp/servers/lalithbuilds/episoda-alpha-mcp"><img src="https://glama.ai/mcp/servers/lalithbuilds/episoda-alpha-mcp/badges/score.svg" alt="Glama Score"></a>
   <a href="https://github.com/lalithbuilds/episoda-alpha-mcp"><img src="https://img.shields.io/github/stars/lalithbuilds/episoda-alpha-mcp?style=social" alt="GitHub Stars"></a>
+  <a href="README_zh.md"><img src="https://img.shields.io/badge/文档-简体中文-red.svg" alt="Chinese Docs"></a>
 </p>
 
 <p align="center">
