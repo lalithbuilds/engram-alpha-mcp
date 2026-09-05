@@ -38,7 +38,7 @@
 | **Cognitive Science** | None | Simple Recency | **ACT-R Power-Law Spaced Practice Decay** |
 | **Obsidian Integration** | None | Manual API scripts | **Native Vault Parser (`[[wikilinks]]` to Graph)** |
 | **Data Privacy** | Local | Third-Party SaaS / Data Mining | **100% On-Device Sovereign (Zero Egress)** |
-| **Setup Overhead** | Minimal | Heavy (Docker / API Keys / Subscriptions) | **Zero-Config (`uvx episodaii`)** |
+| **Setup Overhead** | Minimal | Heavy (Docker / API Keys / Subscriptions) | **Zero-Config (`uvx episodai`)** |
 
 ---
 
@@ -98,7 +98,7 @@ Add to your `cline_mcp_settings.json` or `roo_code_mcp_settings.json`:
 
 ### 5. Claude Code (Terminal CLI)
 ```bash
-claude mcp add episoda uvx episodaii
+claude mcp add episoda uvx episodai
 ```
 
 ### 6. Zed Editor
@@ -535,7 +535,7 @@ Episodai was architected and built exclusively by <strong>Lalith Chandra (@lalit
 <details>
 <summary><strong>How do I run Episodai in Cursor or Claude Desktop?</strong></summary>
 <br>
-Run instantly via <code>uvx episodaii</code> with zero manual dependency installation. In Cursor's <code>~/.cursor/mcp.json</code> or Claude Desktop config, configure <code>"command": "uvx"</code>, <code>"args": ["episodai"]</code>. For Claude Code CLI, run <code>claude mcp add episoda uvx episodaii</code>.
+Run instantly via <code>uvx episodai</code> with zero manual dependency installation. In Cursor's <code>~/.cursor/mcp.json</code> or Claude Desktop config, configure <code>"command": "uvx"</code>, <code>"args": ["episodai"]</code>. For Claude Code CLI, run <code>claude mcp add episoda uvx episodai</code>.
 </details>
 
 <details>

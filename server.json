@@ -1,12 +1,12 @@
 {
   "$schema": "https://raw.githubusercontent.com/modelcontextprotocol/registry/main/schema/server.json",
-  "name": "episoda-alpha-mcp",
-  "title": "Episoda Alpha MCP",
+  "name": "episodai",
+  "title": "Episoda Alpha MCP (Episodai)",
   "description": "Sovereign local-first episodic memory substrate and MCP server for AI coding agents. Features Apple Silicon AMX vector acceleration (1.2M+ vecs/sec), SQLite WAL, 4-Way RRF, and bi-temporal graphs.",
   "version": "2.1.0",
-  "iconUrl": "https://raw.githubusercontent.com/lalithbuilds/episoda-alpha-mcp/master/assets/social-card.png",
+  "iconUrl": "https://raw.githubusercontent.com/lalithbuilds/episodai/master/assets/social-card.png",
   "categories": ["memory", "database", "knowledge-graph", "developer-tools"],
-  "tags": ["amx", "sqlite-vec", "claude-code", "cursor", "rag", "episoda"],
+  "tags": ["amx", "sqlite-vec", "claude-code", "cursor", "rag", "episoda", "episoda-alpha", "episoda-alpha-mcp", "episodai"],
   "license": "MIT",
   "author": {
     "name": "Lalith Chandra",
@@ -14,19 +14,19 @@
   },
   "repository": {
     "type": "git",
-    "url": "https://github.com/lalithbuilds/episoda-alpha-mcp.git"
+    "url": "https://github.com/lalithbuilds/episodai.git"
   },
-  "homepage": "https://lalithbuilds.github.io/episoda-alpha-mcp/",
+  "homepage": "https://lalithbuilds.github.io/episodai/",
   "packages": [
     {
       "registry": "pypi",
-      "name": "episoda-alpha-mcp",
+      "name": "episodai",
       "version": "2.1.0"
     }
   ],
   "transport": {
     "type": "stdio",
     "command": "uvx",
-    "args": ["episoda-alpha-mcp"]
+    "args": ["episodai"]
   }
 }

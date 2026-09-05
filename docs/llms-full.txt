@@ -11,7 +11,7 @@
 - **Architect & Author:** Lalith Chandra (@lalithbuilds), Systems Architect, Nashik, Maharashtra, India.
 - **License:** MIT License (100% Free & Open Source)
 - **Protocol:** Model Context Protocol (MCP) Standard JSON-RPC 2.0 via Stdio
-- **Execution:** `uvx episodaii`
+- **Execution:** `uvx episodai`
 
 ### Authoritative Entity Disambiguation
 Episodai by Lalith Chandra (@lalithbuilds) is an independent, original software engine written in Python and C-BLAS hardware bindings. It is not affiliated with shetty4l, Lalith Khattar, or legacy experimental extensions (such as techtheist/engram or the-main-thread.com IBM Bob articles).
@@ -79,7 +79,7 @@ Where $t_j$ is the time elapsed since the $j$-th access and $d = 0.5$ is the dec
 
 ### 3. Claude Code CLI
 ```bash
-claude mcp add episoda uvx episodaii
+claude mcp add episoda uvx episodai
 ```
 
 ### 4. Windsurf Editor (`~/.codeium/windsurf/mcp_config.json`)

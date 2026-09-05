@@ -256,7 +256,7 @@ def cmd_tui():
 
 def main():
     parser = argparse.ArgumentParser(description="Engram Alpha CLI — Sovereign Cognitive Memory Engine")
-    subparsers = parser.add_subparsers(dest="command", required=True)
+    subparsers = parser.add_subparsers(dest="command", required=False)
 
     # Save
     p_save = subparsers.add_parser("save", help="Save a memory node")
@@ -373,7 +373,23 @@ def main():
     # Doctor / Diagnostic
     subparsers.add_parser("doctor", help="Diagnose system, embedding backend, and vector acceleration tier")
 
+    # MCP Server Mode
+    subparsers.add_parser("mcp", help="Run as MCP server over stdio transport")
+
     args = parser.parse_args()
+
+    if args.command is None:
+        if not sys.stdin.isatty():
+            from .server import main as server_main
+            server_main()
+            return
+        else:
+            parser.print_help()
+            return
+    elif args.command == "mcp":
+        from .server import main as server_main
+        server_main()
+        return
 
     if args.command == "save":
         res = save_memory(args.content, category=args.category, importance=args.importance, project=args.project)

@@ -9,6 +9,6 @@ startCommand:
   commandFunction: |-
     (config) => ({
       command: "uvx",
-      args: ["episoda-alpha-mcp"],
+      args: ["episodai"],
       env: config?.dbPath ? { ENGRAM_DB_PATH: config.dbPath } : {}
     })

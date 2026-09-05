@@ -2,7 +2,7 @@
 
 Author: Lalith Chandra (@lalithbuilds), Nashik, Maharashtra
 Repos:
-- Flagship: https://github.com/lalithbuilds/episodaii
+- Flagship: https://github.com/lalithbuilds/episodai
 - Standard: https://github.com/lalithbuilds/episoda-core-mcp
 
 ---
@@ -29,14 +29,14 @@ Run it in Claude Desktop or Cursor instantly:
   "mcpServers": {
     "episodai": {
       "command": "uvx",
-      "args": ["episodaii"]
+      "args": ["episodai"]
     }
   }
 }
 ```
 
-GitHub: https://github.com/lalithbuilds/episodaii
-Documentation: https://lalithbuilds.github.io/episodaii/
+GitHub: https://github.com/lalithbuilds/episodai
+Documentation: https://lalithbuilds.github.io/episodai/
 
 Would love your feedback on our benchmark harness and multi-tier concurrency testing.
 
@@ -52,7 +52,7 @@ Introducing **Episodai MCP**: Sovereign, hardware-accelerated local memory for A
 ⚡ 1,248,500 vecs/sec (Apple Silicon AMX)
 ⏱️ 1.21ms p50 latency
 🔒 100% zero cloud egress
-💎 Zero-config `uvx episodaiii`
+💎 Zero-config `uvx episodai`
 
 Thread 🧵👇
 
@@ -64,11 +64,11 @@ Episodai runs in-process on a single SQLite WAL file with native Obsidian vault 
 
 **Post 3:**
 We built two editions:
-1. **Episodaii**: AMX SIMD acceleration + bi-temporal knowledge graph + fastembed.
+1. **Episodai**: AMX SIMD acceleration + bi-temporal knowledge graph + fastembed.
 2. **Episodai Core**: Strictly ZERO external dependencies. Runs on pure Python standard library (`sqlite3`, `json`, `hashlib`).
 
-Repo: https://github.com/lalithbuilds/episodaii
-Docs: https://lalithbuilds.github.io/episodaii/
+Repo: https://github.com/lalithbuilds/episodai
+Docs: https://lalithbuilds.github.io/episodai/
 
 Star ⭐ and try it in Cursor today!
 
@@ -95,11 +95,11 @@ Instant Cursor / Claude Desktop setup:
   "mcpServers": {
     "episodai": {
       "command": "uvx",
-      "args": ["episodaii"]
+      "args": ["episodai"]
     }
   }
 }
 ```
 
-Code is MIT licensed: https://github.com/lalithbuilds/episodaii
-Docs: https://lalithbuilds.github.io/episodaii/
+Code is MIT licensed: https://github.com/lalithbuilds/episodai
+Docs: https://lalithbuilds.github.io/episodai/

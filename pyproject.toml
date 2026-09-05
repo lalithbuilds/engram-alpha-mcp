@@ -62,3 +62,7 @@ engram-alpha-mcp = "engram.server:main"
 
 [tool.hatch.build.targets.wheel]
 packages = ["src/engram"]
+
+[tool.pytest.ini_options]
+pythonpath = ["src"]
+testpaths = ["tests"]

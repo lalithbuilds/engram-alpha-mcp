@@ -2,48 +2,48 @@
 <rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
   <channel>
     <title>Episoda Alpha MCP Updates &amp; Releases</title>
-    <link>https://lalithbuilds.github.io/episoda-alpha-mcp/</link>
+    <link>https://lalithbuilds.github.io/episodai/</link>
     <description>Official release feed, technical specifications, and setup documentation for Episoda Alpha MCP.</description>
     <language>en-us</language>
     <lastBuildDate>Thu, 03 Sep 2026 10:45:00 GMT</lastBuildDate>
-    <atom:link href="https://lalithbuilds.github.io/episoda-alpha-mcp/feed.xml" rel="self" type="application/rss+xml"/>
+    <atom:link href="https://lalithbuilds.github.io/episodai/feed.xml" rel="self" type="application/rss+xml"/>
     
     <item>
       <title>Episoda Alpha MCP v2.1.0: Sovereign Hardware-Accelerated Memory Engine Released</title>
-      <link>https://lalithbuilds.github.io/episoda-alpha-mcp/</link>
-      <guid>https://lalithbuilds.github.io/episoda-alpha-mcp/#v2.1.0</guid>
+      <link>https://lalithbuilds.github.io/episodai/</link>
+      <guid>https://lalithbuilds.github.io/episodai/#v2.1.0</guid>
       <pubDate>Thu, 03 Sep 2026 10:45:00 GMT</pubDate>
       <description>Official release of Episoda Alpha MCP v2.1.0 with Apple Silicon AMX vector acceleration (1.2M+ vecs/sec), SQLite WAL, 4-Way RRF, and Obsidian vault sync.</description>
     </item>
 
     <item>
       <title>How to Setup Episoda Alpha MCP in Windsurf Editor (Codeium Cascade)</title>
-      <link>https://lalithbuilds.github.io/episoda-alpha-mcp/windsurf.html</link>
-      <guid>https://lalithbuilds.github.io/episoda-alpha-mcp/windsurf.html</guid>
+      <link>https://lalithbuilds.github.io/episodai/windsurf.html</link>
+      <guid>https://lalithbuilds.github.io/episodai/windsurf.html</guid>
       <pubDate>Thu, 03 Sep 2026 10:45:00 GMT</pubDate>
       <description>Complete guide for configuring persistent on-device episodic memory in Windsurf Cascade agent.</description>
     </item>
 
     <item>
       <title>How to Setup Episoda Alpha MCP in Cline (VS Code Autonomous Agent)</title>
-      <link>https://lalithbuilds.github.io/episoda-alpha-mcp/cline.html</link>
-      <guid>https://lalithbuilds.github.io/episoda-alpha-mcp/cline.html</guid>
+      <link>https://lalithbuilds.github.io/episodai/cline.html</link>
+      <guid>https://lalithbuilds.github.io/episodai/cline.html</guid>
       <pubDate>Thu, 03 Sep 2026 10:45:00 GMT</pubDate>
       <description>Detailed walkthrough for connecting Episoda Alpha MCP to Cline for autonomous software development.</description>
     </item>
 
     <item>
       <title>How to Setup Episoda Alpha MCP in Claude Desktop &amp; Claude Code CLI</title>
-      <link>https://lalithbuilds.github.io/episoda-alpha-mcp/claude.html</link>
-      <guid>https://lalithbuilds.github.io/episoda-alpha-mcp/claude.html</guid>
+      <link>https://lalithbuilds.github.io/episodai/claude.html</link>
+      <guid>https://lalithbuilds.github.io/episodai/claude.html</guid>
       <pubDate>Thu, 03 Sep 2026 09:30:00 GMT</pubDate>
-      <description>Step-by-step setup walkthrough for Anthropic Claude Desktop and Claude Code CLI with uvx episoda-alpha-mcp.</description>
+      <description>Step-by-step setup walkthrough for Anthropic Claude Desktop and Claude Code CLI with uvx episodai.</description>
     </item>
 
     <item>
       <title>How to Configure Episoda Alpha MCP in Cursor IDE</title>
-      <link>https://lalithbuilds.github.io/episoda-alpha-mcp/cursor.html</link>
-      <guid>https://lalithbuilds.github.io/episoda-alpha-mcp/cursor.html</guid>
+      <link>https://lalithbuilds.github.io/episodai/cursor.html</link>
+      <guid>https://lalithbuilds.github.io/episodai/cursor.html</guid>
       <pubDate>Thu, 03 Sep 2026 09:30:00 GMT</pubDate>
       <description>Detailed guide to setting up Episoda Alpha MCP in Cursor IDE (~/.cursor/mcp.json).</description>
     </item>

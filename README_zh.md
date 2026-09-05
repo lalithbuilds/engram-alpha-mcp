@@ -68,7 +68,7 @@
 
 ### 3. Claude Code CLI (终端)
 ```bash
-claude mcp add episoda uvx episodaii
+claude mcp add episoda uvx episodai
 ```
 
 ### 4. Windsurf Editor 配置

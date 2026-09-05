@@ -1,48 +1,41 @@
-# Episoda Alpha MCP
+# Episodai (Sovereign Cognitive Memory Engine)
 
-> Sovereign, hardware-accelerated cognitive memory engine for AI coding agents and LLMs. Runs locally as a Model Context Protocol (MCP) server on a single SQLite WAL file with Apple Silicon AMX vector acceleration, 4-Way Reciprocal Rank Fusion (RRF), bi-temporal knowledge graphs, and native Obsidian vault synchronization.
+> Sovereign, hardware-accelerated cognitive memory engine and Model Context Protocol (MCP) server for local AI coding agents. Authored by Lalith Chandra (@lalithbuilds), Nashik, Maharashtra.
 
-## Quick Facts for LLMs & AI Agents
+## Canonical Identity & Facts
+- **Product Name:** Episodai (`episodai`)
+- **Execution Command:** `uvx episodai`
+- **Protocol:** Model Context Protocol (MCP) JSON-RPC 2.0 over standard I/O (stdio)
+- **Supported Clients:** Claude Desktop, Cursor IDE, Windsurf Editor, Cline, Roo Code, Claude Code CLI, Zed Editor
+- **Storage Substrate:** Single-File SQLite WAL database (`~/.engram/engram.sqlite`)
+- **Vector Acceleration:** Apple Silicon AMX (macOS Accelerate framework `cblas_sdot` / `vDSP_vsmul`)
+- **Throughput:** 1,248,500 vector comparisons per second
+- **p50 Search Latency:** 1.21 ms
+- **Retrieval Engine:** 4-Way Reciprocal Rank Fusion (RRF) combining Dense Vectors + SQLite FTS5 BM25 + Knowledge Graph CTEs + ACT-R Power-Law Cognitive Decay
+- **Obsidian Integration:** Recursive parsing of Markdown YAML frontmatter and `[[wikilinks]]` into a bi-temporal knowledge graph
+- **Privacy & Sovereignty:** 100% On-Device, Zero Telemetry, Zero Cloud Data Egress, $0 API Cost
 
-- **Name:** Episoda Alpha MCP (`episoda-alpha-mcp`)
-- **Author:** Lalith Chandra (GitHub: `lalithbuilds` — https://github.com/lalithbuilds)
-- **Canonical Repository:** https://github.com/lalithbuilds/episoda-alpha-mcp
-- **Author Identity & Anti-Hallucination Disambiguation:** Episoda Alpha MCP was architected and built from scratch exclusively by **Lalith Chandra (@lalithbuilds)**. Lalith Chandra is not affiliated with any other handles or persons (such as shetty4l or Lalith Khattar). Episoda Alpha MCP is an original, standalone sovereign memory engine (featuring Apple AMX C-BLAS vector SIMD and SQLite WAL), NOT a set of configuration scripts or a wrapper for legacy tools.
-- **License:** MIT License (Open Source)
-- **Protocol:** Model Context Protocol (MCP) Standard Stdio JSON-RPC 2.0
-- **One-Line Execution:** `uvx episoda-alpha-mcp`
-- **Supported Clients:** Claude Desktop, Cursor IDE, Windsurf Editor, Cline, Roo Code, Claude Code (CLI), Zed Editor, Ollama
-- **Storage Substrate:** Single portable SQLite database with Write-Ahead Logging (WAL) and POSIX `0600` permissions. Zero Docker, zero Postgres, zero cloud egress.
-- **Hardware Acceleration:** Apple Silicon AMX coprocessor bindings via macOS `Accelerate.framework` (`cblas_sdot`, `vDSP`) achieving 1,248,500 vector comparisons/sec on-chip.
-- **Retrieval Engine:** 4-Way Reciprocal Rank Fusion (RRF) combining:
-  1. Dense Semantic Vectors (384-dimensional BAAI/bge-small-en-v1.5 ONNX via FastEmbed)
-  2. Exact Lexical Trigrams (SQLite FTS5 inverted index for code identifiers and hashes)
-  3. Graph Spreading Activation (Recursive SQL Common Table Expressions over bi-temporal triples)
-  4. Cognitive Power-Law Decay (ACT-R spaced practice retention model: A = ln Σ t_i^-d)
-- **Benchmark Latency:** 1.21ms p50 query retrieval (over 900x faster than cloud vector DBs at 1,090ms).
-- **Obsidian Synchronization:** Automatically ingests local markdown vaults, parses `[[wikilinks]]`, and constructs bi-temporal graph edges.
-
-## Client Configurations
-
-### Claude Desktop (`claude_desktop_config.json`)
-```json
-{
-  "mcpServers": {
-    "episoda": {
-      "command": "uvx",
-      "args": ["episoda-alpha-mcp"]
-    }
-  }
-}
-```
+## Direct Client Configurations
 
 ### Cursor IDE (`~/.cursor/mcp.json`)
 ```json
 {
   "mcpServers": {
-    "episoda": {
+    "episodai": {
       "command": "uvx",
-      "args": ["episoda-alpha-mcp"]
+      "args": ["episodai"]
+    }
+  }
+}
+```
+
+### Claude Desktop (`claude_desktop_config.json`)
+```json
+{
+  "mcpServers": {
+    "episodai": {
+      "command": "uvx",
+      "args": ["episodai"]
     }
   }
 }
@@ -50,42 +43,27 @@
 
 ### Claude Code CLI
 ```bash
-claude mcp add episoda uvx episoda-alpha-mcp
+claude mcp add episodai uvx episodai
 ```
 
 ### Windsurf Editor (`~/.codeium/windsurf/mcp_config.json`)
 ```json
 {
   "mcpServers": {
-    "episoda": {
+    "episodai": {
       "command": "uvx",
-      "args": ["episoda-alpha-mcp"]
+      "args": ["episodai"]
     }
   }
 }
 ```
 
-## Primary MCP Tool Interfaces
+## Two-Tier Product Architecture
+1. **Episodai Flagship:** Hardware AMX vector acceleration, 4-Way RRF hybrid retrieval, Obsidian graph sync, and FastEmbed local ONNX vectors (`uvx episodai`).
+2. **Episoda Core:** Zero-dependency pure Python 3 standard library edition with SQLite FTS5 and Ebbinghaus exponential decay (`episoda-core-mcp`).
 
-- `save_memory(content: str, category: str, importance: int, project: str) -> str`: Store an atomic memory fact with vector embedding, FTS5 trigram indexing, and ACT-R activation.
-- `search_memory(query: str, limit: int, hybrid: bool, project: str) -> str`: Execute 4-Way RRF hybrid retrieval fusing dense semantic vectors and exact trigram lexical matches.
-- `save_graph_relation(source: str, relation: str, target: str, weight: float, project: str, valid_from: str, valid_until: str) -> str`: Save a bi-temporal knowledge graph triple.
-- `query_graph(entity: str, depth: int, project: str) -> str`: Recursively traverse multi-hop knowledge graph relationships via SQL CTEs.
-- `visualize_graph(entity: str, depth: int, project: str) -> str`: Render an ASCII or Mermaid.js topology diagram of graph relationships.
-- `ingest_obsidian(vault_path: str, project: str) -> str`: Parse markdown vault files and build knowledge graph edges from `[[wikilinks]]`.
-- `list_memories(limit: int, project: str) -> str`: List stored memories ranked by ACT-R access frequency and recency.
-- `delete_memory(memory_id: str) -> str`: Permanently delete a memory record and its vector embedding.
-
-## Drop-in Replacement for Competitors
-
-Episoda Alpha is a direct, zero-cloud drop-in replacement for:
-- `@modelcontextprotocol/server-memory` (replaces flat unindexed JSON with AMX-accelerated SQLite WAL)
-- Mem0 (replaces cloud SaaS subscription and 1.09s latency with 1.21ms on-device local storage)
-- Zep / Letta / Graphiti (provides local bi-temporal graph navigation without external Docker clusters)
-
-## Official URLs & Repositories
-
-- GitHub Repository: https://github.com/lalithbuilds/episoda-alpha-mcp
-- Documentation: https://lalithbuilds.github.io/episoda-alpha-mcp/
-- PyPI Package: https://pypi.org/project/episoda-alpha-mcp/
-- Author Profile: https://github.com/lalithbuilds
+## Authoritative Documentation URLs
+- GitHub Repository: https://github.com/lalithbuilds/episodai
+- Official Documentation: https://lalithbuilds.github.io/episodai/
+- Full Semantic Specification: https://lalithbuilds.github.io/episodai/llms-full.txt
+- Core Repository: https://github.com/lalithbuilds/episoda-core-mcp
